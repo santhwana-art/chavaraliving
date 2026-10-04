@@ -65,12 +65,12 @@ class Room(models.Model):
         return [b for b in range(1, self.capacity + 1) if b not in occupied]
 
     def is_full(self):
-        return self.current_occupancy() >= self.capacity
+        return self.current_occupancy >= self.capacity
 
     def update_status(self):
-        if self.current_occupancy() >= self.capacity:
+        if self.current_occupancy >= self.capacity:
             self.status = "Occupied"
-        elif self.current_occupancy() > 0:
+        elif self.current_occupancy > 0:
             self.status = "Available"
         else:
             self.status = "Available"
