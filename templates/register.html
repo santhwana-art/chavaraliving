@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register Student — Chavara Living Hostel</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=7">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .auth-tab-group {
+      display: flex;
+      background: #e2e8f0;
+      padding: 4px;
+      border-radius: 14px;
+      margin-bottom: 24px;
+      gap: 4px;
+    }
+    .auth-tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px 14px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #64748b;
+      text-decoration: none;
+      border-radius: 10px;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .auth-tab:hover {
+      color: var(--primary);
+    }
+    .auth-tab.active {
+      background: #ffffff;
+      color: var(--primary);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    [data-theme="dark"] .auth-tab.active {
+      background: #1e293b;
+      color: #60a5fa;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .register-card {
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      border-radius: 24px;
+      padding: 38px 40px;
+      width: 100%;
+      max-width: 680px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+      margin: 20px auto;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 640px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+      .register-card {
+        padding: 28px 20px;
+      }
+    }
+
+    .input-icon-wrapper {
+      position: relative;
+    }
+    .input-icon-wrapper i.left-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+    .input-icon-wrapper input,
+    .input-icon-wrapper select {
+      padding-left: 40px;
+    }
+
+    /* Live Password Checklist */
+    .password-checklist {
+      background: var(--card-inner-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-top: 10px;
+      margin-bottom: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    [data-theme="dark"] .password-checklist {
+      background: #0f172a !important;
+      border-color: #334155 !important;
+    }
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #94a3b8;
+      transition: all 0.25s ease;
+    }
+    .check-item i {
+      font-size: 0.95rem;
+    }
+    .check-item.valid {
+      color: #059669;
+    }
+    .check-item.valid i {
+      color: #10b981;
+    }
+    .check-item.invalid-warning {
+      color: #dc2626;
+    }
+
+    .strength-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .strength-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .strength-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: #ef4444;
+      border-radius: 10px;
+      transition: width 0.3s ease, background-color 0.3s ease;
+    }
+    .strength-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #64748b;
+      min-width: 60px;
+      text-align: right;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .shake-anim {
+      animation: shake 0.4s ease-in-out;
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-wrapper" style="background-image: linear-gradient(135deg, rgba(12, 32, 24, 0.62) 0%, rgba(18, 50, 38, 0.52) 100%), url('{% static 'images/livista.webp' %}'); background-size: cover; background-position: center; background-repeat: no-repeat; min-height: 100vh; padding: 30px 16px;">
+  <div class="register-card" id="registerCard">
+    <div class="login-logo" style="margin-bottom: 20px;">
+      <div class="logo-icon" style="width: 54px; height: 54px; font-size: 1.5rem; margin-bottom: 10px;"><i class="fas fa-graduation-cap"></i></div>
+      <h1 style="font-size: 1.5rem;">Join {{ hostel_settings.hostel_name|default:"Chavara Living" }}</h1>
+      <p>Student &amp; Resident Account Registration</p>
+    </div>
+
+    <!-- Navigation Tabs (Sign In / Register) -->
+    <div class="auth-tab-group">
+      <a href="{% url 'login' %}" class="auth-tab" id="tabSignIn">
+        <i class="fas fa-arrow-right-to-bracket"></i> Sign In
+      </a>
+      <a href="{% url 'register' %}" class="auth-tab active" id="tabRegister">
+        <i class="fas fa-user-plus"></i> Register
+      </a>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div style="background:{% if message.tags == 'success' %}#dcfce7{% else %}#fee2e2{% endif %}; color:{% if message.tags == 'success' %}#15803d{% else %}#b91c1c{% endif %}; padding:12px 16px; border-radius:10px; font-size:0.88rem; font-weight:600; margin-bottom:18px; display:flex; align-items:center; gap:8px;">
+          <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i> {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <div id="regAlert" style="display:none; background:#fee2e2; color:#b91c1c; padding:12px 16px; border-radius:10px; font-size:0.85rem; font-weight:600; margin-bottom:18px; align-items:center; gap:8px;">
+      <i class="fas fa-triangle-exclamation"></i> <span id="regAlertText"></span>
+    </div>
+
+    <form method="post" action="{% url 'register' %}" id="registerForm" autocomplete="off">
+      {% csrf_token %}
+
+      <div class="grid-2">
+        <div style="margin-bottom: 14px;">
+          <label class="form-label">Full Name <span style="color:#ef4444;">*</span></label>
+          <div class="input-icon-wrapper">
+            <i class="fas fa-id-card left-icon"></i>
+            {{ form.name }}
+          </div>
+          {% if form.name.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.name.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label class="form-label">Username <span style="color:#ef4444;">*</span></label>
+          <div class="input-icon-wrapper">
+            <i class="fas fa-user left-icon"></i>
+            {{ form.username }}
+          </div>
+          {% if form.username.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.username.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div style="margin-bottom: 14px;">
+          <label class="form-label">Email Address <span style="color:#ef4444;">*</span></label>
+          <div class="input-icon-wrapper">
+            <i class="fas fa-envelope left-icon"></i>
+            {{ form.email }}
+          </div>
+          {% if form.email.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.email.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label class="form-label">10-Digit Mobile <span style="color:#ef4444;">*</span></label>
+          <div class="input-icon-wrapper">
+            <i class="fas fa-phone left-icon"></i>
+            {{ form.contact }}
+          </div>
+          {% if form.contact.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.contact.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div style="margin-bottom: 14px;">
+          <label class="form-label">Course / Degree <span style="color:#ef4444;">*</span></label>
+          <div class="input-icon-wrapper">
+            <i class="fas fa-book-open left-icon"></i>
+            {{ form.course }}
+          </div>
+          {% if form.course.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.course.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label class="form-label">Year of Study <span style="color:#ef4444;">*</span></label>
+          <div class="input-icon-wrapper">
+            <i class="fas fa-calendar-days left-icon"></i>
+            {{ form.year }}
+          </div>
+          {% if form.year.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.year.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <!-- Password and Confirm Password in 2 Columns -->
+      <div class="grid-2">
+        <div style="margin-bottom: 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label class="form-label" style="margin-bottom:0;">Password <span style="color:#ef4444;">*</span></label>
+          </div>
+          <div class="input-icon-wrapper">
+            <i class="fas fa-lock left-icon"></i>
+            {{ form.password }}
+            <i class="fas fa-eye" id="toggleRegPwd" onclick="toggleVisibility('regPasswordInput', 'toggleRegPwd')" style="position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--text-muted); cursor:pointer; font-size:1.05rem;" title="Show/Hide"></i>
+          </div>
+          {% if form.password.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.password.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <label class="form-label" style="margin-bottom:0;">Confirm Password <span style="color:#ef4444;">*</span></label>
+            <span id="matchBadge" style="font-size:0.75rem; font-weight:700; color:#94a3b8;"></span>
+          </div>
+          <div class="input-icon-wrapper">
+            <i class="fas fa-shield-halved left-icon"></i>
+            {{ form.confirm_password }}
+            <i class="fas fa-eye" id="toggleRegConfirmPwd" onclick="toggleVisibility('regConfirmPasswordInput', 'toggleRegConfirmPwd')" style="position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--text-muted); cursor:pointer; font-size:1.05rem;" title="Show/Hide"></i>
+          </div>
+          {% if form.confirm_password.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.confirm_password.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <!-- Password Security Requirements Box -->
+      <div class="password-checklist" id="regPasswordChecklist" style="margin-bottom: 18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.78rem; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">
+            <i class="fas fa-key" style="color:var(--primary); margin-right:4px;"></i> Password Requirements
+          </span>
+          <div class="strength-wrapper" style="margin-top:0;">
+            <div class="strength-bar-bg" style="width:80px;">
+              <div class="strength-bar-fill" id="regStrengthBar"></div>
+            </div>
+            <span class="strength-label" id="regStrengthLabel">Required</span>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:6px; margin-top:4px;">
+          <div class="check-item" id="regRuleLength">
+            <i class="fas fa-circle-xmark"></i>
+            <span>Min 8 characters</span>
+          </div>
+          <div class="check-item" id="regRuleUpper">
+            <i class="fas fa-circle-xmark"></i>
+            <span>1 Uppercase (A-Z)</span>
+          </div>
+          <div class="check-item" id="regRuleSpecial">
+            <i class="fas fa-circle-xmark"></i>
+            <span>1 Special symbol (!@#$)</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label class="form-label">Permanent Address (Optional)</label>
+        {{ form.address }}
+      </div>
+
+      <button type="submit" id="regSubmitBtn" class="btn-primary-custom" style="width:100%; justify-content:center; padding:13px 0; font-size:1rem;">
+        <i class="fas fa-user-check"></i> Complete Registration
+      </button>
+    </form>
+
+    <div style="text-align:center; margin-top:20px;">
+      <span style="color:#64748b; font-size:0.9rem;">Already have an account?</span>
+      <a href="{% url 'login' %}" style="color:var(--primary); font-weight:700; text-decoration:none; margin-left:6px; font-size:0.9rem;">
+        Sign In <i class="fas fa-arrow-right" style="font-size:0.8rem;"></i>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleVisibility(inputId, iconId) {
+  const input = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.remove('fa-eye');
+    icon.classList.add('fa-eye-slash');
+    icon.style.color = 'var(--primary)';
+  } else {
+    input.type = 'password';
+    icon.classList.remove('fa-eye-slash');
+    icon.classList.add('fa-eye');
+    icon.style.color = 'var(--text-muted)';
+  }
+}
+
+const regPwdInput = document.getElementById('regPasswordInput');
+const regConfirmPwdInput = document.getElementById('regConfirmPasswordInput');
+const regRuleLength = document.getElementById('regRuleLength');
+const regRuleUpper = document.getElementById('regRuleUpper');
+const regRuleSpecial = document.getElementById('regRuleSpecial');
+const regStrengthBar = document.getElementById('regStrengthBar');
+const regStrengthLabel = document.getElementById('regStrengthLabel');
+const matchBadge = document.getElementById('matchBadge');
+const registerForm = document.getElementById('registerForm');
+const regAlert = document.getElementById('regAlert');
+const regAlertText = document.getElementById('regAlertText');
+const registerCard = document.getElementById('registerCard');
+
+function checkPasswordRules(val) {
+  const hasLength = val.length >= 8;
+  const hasUpper = /[A-Z]/.test(val);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>\-_=+[\]\\/]/.test(val);
+
+  updateRuleUI(regRuleLength, hasLength);
+  updateRuleUI(regRuleUpper, hasUpper);
+  updateRuleUI(regRuleSpecial, hasSpecial);
+
+  let passed = (hasLength ? 1 : 0) + (hasUpper ? 1 : 0) + (hasSpecial ? 1 : 0);
+  if (val.length === 0) {
+    regStrengthBar.style.width = '0%';
+    regStrengthBar.style.backgroundColor = '#ef4444';
+    regStrengthLabel.textContent = 'Required';
+    regStrengthLabel.style.color = '#64748b';
+  } else if (passed === 1) {
+    regStrengthBar.style.width = '33%';
+    regStrengthBar.style.backgroundColor = '#ef4444';
+    regStrengthLabel.textContent = 'Weak';
+    regStrengthLabel.style.color = '#ef4444';
+  } else if (passed === 2) {
+    regStrengthBar.style.width = '66%';
+    regStrengthBar.style.backgroundColor = '#f59e0b';
+    regStrengthLabel.textContent = 'Moderate';
+    regStrengthLabel.style.color = '#f59e0b';
+  } else if (passed === 3) {
+    regStrengthBar.style.width = '100%';
+    regStrengthBar.style.backgroundColor = '#10b981';
+    regStrengthLabel.textContent = 'Strong ✓';
+    regStrengthLabel.style.color = '#10b981';
+  }
+
+  checkMatch();
+  return hasLength && hasUpper && hasSpecial;
+}
+
+function updateRuleUI(elem, isValid) {
+  const icon = elem.querySelector('i');
+  if (isValid) {
+    elem.classList.add('valid');
+    elem.classList.remove('invalid-warning');
+    icon.className = 'fas fa-circle-check';
+  } else {
+    elem.classList.remove('valid');
+    icon.className = 'fas fa-circle-xmark';
+  }
+}
+
+function checkMatch() {
+  const p1 = regPwdInput.value;
+  const p2 = regConfirmPwdInput.value;
+  if (!p2) {
+    matchBadge.textContent = '';
+    return true;
+  }
+  if (p1 === p2) {
+    matchBadge.textContent = 'Passwords Match ✓';
+    matchBadge.style.color = '#10b981';
+    return true;
+  } else {
+    matchBadge.textContent = 'Passwords do not match';
+    matchBadge.style.color = '#ef4444';
+    return false;
+  }
+}
+
+regPwdInput.addEventListener('input', function() {
+  regAlert.style.display = 'none';
+  checkPasswordRules(this.value);
+});
+
+regConfirmPwdInput.addEventListener('input', function() {
+  checkMatch();
+});
+
+registerForm.addEventListener('submit', function(e) {
+  const p1 = regPwdInput.value;
+  const p2 = regConfirmPwdInput.value;
+  const isValid = checkPasswordRules(p1);
+  const isMatch = checkMatch();
+
+  if (!isValid) {
+    e.preventDefault();
+    registerCard.classList.remove('shake-anim');
+    void registerCard.offsetWidth;
+    registerCard.classList.add('shake-anim');
+
+    regAlertText.textContent = "Password must have at least 8 characters, 1 uppercase letter (A-Z), and 1 special symbol (!@#$%^&*).";
+    regAlert.style.display = 'flex';
+    regPwdInput.focus();
+    return;
+  }
+
+  if (!isMatch) {
+    e.preventDefault();
+    registerCard.classList.remove('shake-anim');
+    void registerCard.offsetWidth;
+    registerCard.classList.add('shake-anim');
+
+    regAlertText.textContent = "The passwords entered do not match.";
+    regAlert.style.display = 'flex';
+    regConfirmPwdInput.focus();
+    return;
+  }
+});
+</script>
+
+<!-- Cursor-driven interactive animations & 3D tilt -->
+<script src="{% static 'js/cursor_effects.js' %}"></script>
+</body>
+</html>

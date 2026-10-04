@@ -1,0 +1,184 @@
+{% extends "base_admin.html" %}
+{% block title %}System Settings — {{ hostel_settings.hostel_name|default:"Chavara Living" }}{% endblock %}
+{% block page_title %}Hostel &amp; System Settings{% endblock %}
+
+{% block content %}
+<div style="max-width:960px; margin:0 auto;">
+  <div style="margin-bottom:28px;">
+    <h2 style="font-size:1.45rem; font-weight:800; color:var(--text-dark); margin:0 0 4px;">⚙️ Admin &amp; Hostel Settings</h2>
+    <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">Configure the hostel's brand identity, contact phone, email, and update administrator security credentials.</p>
+  </div>
+
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:24px; align-items:start;">
+    
+    <!-- CARD 1: Hostel Information & Contact Settings -->
+    <div class="card-custom">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid var(--border-color);">
+        <div style="width:42px; height:42px; border-radius:12px; background:rgba(37,99,235,0.12); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+          <i class="fas fa-building-columns"></i>
+        </div>
+        <div>
+          <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-dark); margin:0;">Hostel Identity &amp; Contact</h3>
+          <p style="font-size:0.78rem; color:var(--text-muted); margin:2px 0 0;">Displayed on the landing page, student portal, and reports</p>
+        </div>
+      </div>
+
+      <form method="post" action="{% url 'admin_settings' %}">
+        {% csrf_token %}
+        <input type="hidden" name="form_action" value="update_hostel">
+
+        {% if hostel_form.non_field_errors %}
+          <div style="background:#fee2e2; color:#b91c1c; padding:10px 14px; border-radius:8px; font-size:0.84rem; margin-bottom:14px;">
+            {% for err in hostel_form.non_field_errors %}{{ err }}<br>{% endfor %}
+          </div>
+        {% endif %}
+
+        <div style="margin-bottom:16px;">
+          <label class="form-label">Hostel Name *</label>
+          {{ hostel_form.hostel_name }}
+          {% if hostel_form.hostel_name.errors %}<div style="color:#ef4444; font-size:0.75rem; margin-top:3px;">{{ hostel_form.hostel_name.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label class="form-label">System Tagline</label>
+          {{ hostel_form.tagline }}
+          {% if hostel_form.tagline.errors %}<div style="color:#ef4444; font-size:0.75rem; margin-top:3px;">{{ hostel_form.tagline.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:16px;">
+          <div>
+            <label class="form-label">Official Phone *</label>
+            {{ hostel_form.phone }}
+            {% if hostel_form.phone.errors %}<div style="color:#ef4444; font-size:0.75rem; margin-top:3px;">{{ hostel_form.phone.errors.0 }}</div>{% endif %}
+          </div>
+          <div>
+            <label class="form-label">Emergency / Warden</label>
+            {{ hostel_form.emergency_contact }}
+            {% if hostel_form.emergency_contact.errors %}<div style="color:#ef4444; font-size:0.75rem; margin-top:3px;">{{ hostel_form.emergency_contact.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label class="form-label">Contact Email *</label>
+          {{ hostel_form.email }}
+          {% if hostel_form.email.errors %}<div style="color:#ef4444; font-size:0.75rem; margin-top:3px;">{{ hostel_form.email.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label class="form-label">Campus Address</label>
+          {{ hostel_form.address }}
+          {% if hostel_form.address.errors %}<div style="color:#ef4444; font-size:0.75rem; margin-top:3px;">{{ hostel_form.address.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom:22px;">
+          <label class="form-label">Gate Timings &amp; General Notice</label>
+          {{ hostel_form.rules_notice }}
+          {% if hostel_form.rules_notice.errors %}<div style="color:#ef4444; font-size:0.75rem; margin-top:3px;">{{ hostel_form.rules_notice.errors.0 }}</div>{% endif %}
+        </div>
+
+        <button type="submit" class="btn-primary-custom" style="width:100%; justify-content:center; padding:12px 0;">
+          <i class="fas fa-floppy-disk"></i> Save Hostel Information
+        </button>
+      </form>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div style="display:flex; flex-direction:column; gap:24px;">
+      
+      <!-- CARD 2: Change Password -->
+      <div class="card-custom">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid var(--border-color);">
+          <div style="width:42px; height:42px; border-radius:12px; background:rgba(239,68,68,0.12); color:#ef4444; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+            <i class="fas fa-key"></i>
+          </div>
+          <div>
+            <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-dark); margin:0;">Change Password</h3>
+            <p style="font-size:0.78rem; color:var(--text-muted); margin:2px 0 0;">Update your administrator account password</p>
+          </div>
+        </div>
+
+        <form method="post" action="{% url 'admin_settings' %}">
+          {% csrf_token %}
+          <input type="hidden" name="form_action" value="update_password">
+
+          {% if password_form.non_field_errors %}
+            <div style="background:#fee2e2; color:#b91c1c; padding:10px 14px; border-radius:8px; font-size:0.84rem; margin-bottom:14px;">
+              {% for err in password_form.non_field_errors %}{{ err }}<br>{% endfor %}
+            </div>
+          {% endif %}
+
+          <div style="margin-bottom:16px;">
+            <label class="form-label">Current Password *</label>
+            <div style="position:relative;">
+              {{ password_form.current_password }}
+              <i class="fas fa-lock" style="position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+            </div>
+            {% if password_form.current_password.errors %}<div style="color:#ef4444; font-size:0.75rem; margin-top:3px;">{{ password_form.current_password.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <label class="form-label">New Password *</label>
+            <div style="position:relative;">
+              {{ password_form.new_password }}
+              <i class="fas fa-shield" style="position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:3px;">Min. 8 characters with 1 uppercase letter and 1 special symbol</div>
+            {% if password_form.new_password.errors %}<div style="color:#ef4444; font-size:0.75rem; margin-top:3px;">{{ password_form.new_password.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div style="margin-bottom:22px;">
+            <label class="form-label">Confirm New Password *</label>
+            <div style="position:relative;">
+              {{ password_form.confirm_new_password }}
+              <i class="fas fa-check-double" style="position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+            </div>
+            {% if password_form.confirm_new_password.errors %}<div style="color:#ef4444; font-size:0.75rem; margin-top:3px;">{{ password_form.confirm_new_password.errors.0 }}</div>{% endif %}
+          </div>
+
+          <button type="submit" class="btn-primary-custom" style="width:100%; justify-content:center; padding:11px 0; background:#ef4444; border-color:#ef4444;">
+            <i class="fas fa-shield-halved"></i> Update Password
+          </button>
+        </form>
+      </div>
+
+      <!-- CARD 3: Admin Profile Details -->
+      <div class="card-custom">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid var(--border-color);">
+          <div style="width:42px; height:42px; border-radius:12px; background:rgba(16,185,129,0.12); color:#10b981; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+            <i class="fas fa-user-gear"></i>
+          </div>
+          <div>
+            <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-dark); margin:0;">Admin Personal Details</h3>
+            <p style="font-size:0.78rem; color:var(--text-muted); margin:2px 0 0;">Logged in as <strong>{{ request.user.username }}</strong></p>
+          </div>
+        </div>
+
+        <form method="post" action="{% url 'admin_settings' %}">
+          {% csrf_token %}
+          <input type="hidden" name="form_action" value="update_admin_profile">
+
+          <div style="margin-bottom:16px;">
+            <label class="form-label">Administrator Name</label>
+            <input type="text" name="admin_name" value="{{ request.user.first_name }}" class="form-control" placeholder="e.g. Chief Warden">
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <label class="form-label">Admin Email</label>
+            <input type="email" name="admin_email" value="{{ request.user.email }}" class="form-control" placeholder="admin@chavaraliving.in">
+          </div>
+
+          <div style="margin-bottom:20px;">
+            <label class="form-label">Direct Mobile Phone</label>
+            <input type="text" name="admin_phone" value="{{ request.user.phone }}" class="form-control" placeholder="e.g. 9876543210">
+          </div>
+
+          <button type="submit" class="btn-outline-custom" style="width:100%; justify-content:center; padding:10px 0;">
+            <i class="fas fa-user-check"></i> Save Personal Details
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

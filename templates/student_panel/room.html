@@ -1,0 +1,64 @@
+{% extends "base_student.html" %}
+{% block title %}My Room{% endblock %}
+{% block page_title %}My Room Details{% endblock %}
+
+{% block content %}
+<div style="max-width:640px; margin:0 auto;">
+  <div style="margin-bottom:24px; text-align:center;">
+    <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-dark); margin-bottom:4px;">Hostel Accommodation</h2>
+    <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">Details of your active room allocation</p>
+  </div>
+
+  {% if booking %}
+  <div class="card-custom">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:16px; margin-bottom:20px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:40px; height:40px; background:#dcfce7; color:#166534; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+          <i class="fas fa-bed"></i>
+        </div>
+        <span style="font-weight:700; font-size:1rem; color:var(--text-dark);">Active Room Booking</span>
+      </div>
+      <span class="badge-custom badge-success"><i class="fas fa-check-circle"></i> {{ booking.status }}</span>
+    </div>
+
+    <div class="card-inner-box" style="text-align:center; padding:20px 0 24px; border-radius:12px; margin-bottom:20px;">
+      <div style="font-size:3rem; font-weight:800; color:var(--primary); line-height:1;">{{ booking.room.room_no }}</div>
+      <div style="font-size:0.82rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:6px;">Room Number</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.88rem; font-weight:500;">Booking ID</span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ booking.booking_id }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.88rem; font-weight:500;">Room Occupancy Type</span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ booking.room.get_room_type_display }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.88rem; font-weight:500;">Block & Floor</span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ booking.room.block }} (Floor {{ booking.room.floor }})</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.88rem; font-weight:500;">Total Capacity</span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ booking.room.capacity }} Beds</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border-color); align-items:center;">
+        <span style="color:var(--text-muted); font-size:0.88rem; font-weight:500;">Allocated Bed</span>
+        <span class="badge-custom badge-success" style="font-size:0.82rem; font-weight:700;"><i class="fas fa-bed"></i> Bed #{{ booking.bed_number }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:10px 0;">
+        <span style="color:var(--text-muted); font-size:0.88rem; font-weight:500;">Arrival Date</span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ booking.arrival_date|date:"d M Y" }}</span>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card-custom" style="text-align:center; padding:60px 20px;">
+    <i class="fas fa-door-closed" style="font-size:3rem; color:var(--text-muted); margin-bottom:16px;"></i>
+    <h3 style="font-weight:700; margin-bottom:8px;">No Room Allocated</h3>
+    <p style="color:var(--text-muted); font-size:0.9rem;">You have not been assigned a room yet. Please contact the hostel office.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

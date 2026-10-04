@@ -1,0 +1,49 @@
+{% extends "base_student.html" %}
+{% block title %}Lodge Complaint{% endblock %}
+{% block page_title %}Lodge Complaint{% endblock %}
+
+{% block content %}
+<div class="form-container-card">
+  <div
+    style="display:flex; align-items:center; gap:16px; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid var(--border-color);">
+    <div
+      style="width:52px; height:52px; background:#dcfce7; color:#166534; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.4rem;">
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <div>
+      <h2 style="font-size:1.3rem; font-weight:800; color:var(--text-dark); margin:0;">Submit Hostel Complaint</h2>
+      <p style="color:var(--text-muted); font-size:0.88rem; margin-top:2px;">Describe your issue in detail so hostel
+        management can resolve it quickly.</p>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div style="margin-bottom:20px;">
+      <label class="form-label">Complaint Title</label>
+      <input type="text" name="title" class="form-control" placeholder="Provide your complaint title here.." required
+        value="{{ form.title.value|default:'' }}">
+      {% if form.title.errors %}
+      <div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.title.errors }}</div>
+      {% endif %}
+    </div>
+
+    <div style="margin-bottom:28px;">
+      <label class="form-label">Detailed Description</label>
+      <textarea name="description" class="form-control" rows="4"
+        placeholder="Please provide specific details about the issue..."
+        required>{{ form.description.value|default:'' }}</textarea>
+      {% if form.description.errors %}
+      <div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.description.errors }}</div>
+      {% endif %}
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:12px;">
+      <a href="{% url 'student_complaint_list' %}" class="btn-outline-custom">Cancel</a>
+      <button type="submit" class="btn-primary-custom">
+        <i class="fas fa-paper-plane"></i> Submit Complaint
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

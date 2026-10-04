@@ -1,0 +1,110 @@
+{% extends "base_student.html" %}
+{% block title %}Apply for Leave — Chavara Living{% endblock %}
+{% block page_title %}Hostel Leave Application{% endblock %}
+
+{% block content %}
+<div style="max-width:850px; margin:0 auto;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+    <div>
+      <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-dark); margin:0 0 4px;">📝 Apply for Hostel Leave</h2>
+      <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">Submit your leave details for verification and approval by the hostel warden.</p>
+    </div>
+    <a href="{% url 'student_leave_list' %}" class="btn-outline-custom">
+      <i class="fas fa-arrow-left"></i> Back to My Leaves
+    </a>
+  </div>
+
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:24px; align-items:start;">
+    <!-- Application Form Card -->
+    <div class="card-custom">
+      <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-dark); margin-bottom:20px; display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-calendar-plus" style="color:var(--primary);"></i> Leave Details Form
+      </h3>
+
+      <form method="post" action="{% url 'student_leave_apply' %}" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div style="background:#fee2e2; color:#b91c1c; padding:12px 16px; border-radius:10px; font-size:0.85rem; font-weight:600; margin-bottom:18px;">
+            {% for err in form.non_field_errors %}{{ err }}<br>{% endfor %}
+          </div>
+        {% endif %}
+
+        <div style="margin-bottom:18px;">
+          <label class="form-label" for="id_leave_type">Reason Category / Leave Type *</label>
+          {{ form.leave_type }}
+          {% if form.leave_type.errors %}<div style="color:#ef4444; font-size:0.78rem; margin-top:4px;">{{ form.leave_type.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:18px;">
+          <div>
+            <label class="form-label" for="id_start_date">Departure Date *</label>
+            {{ form.start_date }}
+            {% if form.start_date.errors %}<div style="color:#ef4444; font-size:0.78rem; margin-top:4px;">{{ form.start_date.errors.0 }}</div>{% endif %}
+          </div>
+          <div>
+            <label class="form-label" for="id_end_date">Return Date *</label>
+            {{ form.end_date }}
+            {% if form.end_date.errors %}<div style="color:#ef4444; font-size:0.78rem; margin-top:4px;">{{ form.end_date.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label class="form-label" for="id_parent_contact">Parent / Guardian Contact Phone *</label>
+          <div style="position:relative;">
+            {{ form.parent_contact }}
+            <i class="fas fa-phone" style="position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+          </div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Warden may place a verification call to this number.</div>
+          {% if form.parent_contact.errors %}<div style="color:#ef4444; font-size:0.78rem; margin-top:4px;">{{ form.parent_contact.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label class="form-label" for="id_destination_city">Destination / Staying City</label>
+          {{ form.destination_city }}
+          {% if form.destination_city.errors %}<div style="color:#ef4444; font-size:0.78rem; margin-top:4px;">{{ form.destination_city.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom:24px;">
+          <label class="form-label" for="id_reason">Detailed Reason for Leave *</label>
+          {{ form.reason }}
+          {% if form.reason.errors %}<div style="color:#ef4444; font-size:0.78rem; margin-top:4px;">{{ form.reason.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:12px;">
+          <a href="{% url 'student_leave_list' %}" class="btn-outline-custom">Cancel</a>
+          <button type="submit" class="btn-primary-custom" style="padding:10px 24px;">
+            <i class="fas fa-paper-plane"></i> Submit Application
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Guidelines Sidebar Card -->
+    <div style="display:flex; flex-direction:column; gap:18px;">
+      <div class="card-custom" style="border-left:4px solid var(--primary);">
+        <h4 style="font-size:0.95rem; font-weight:800; color:var(--text-dark); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+          <i class="fas fa-circle-info" style="color:var(--primary);"></i> Hostel Leave Guidelines
+        </h4>
+        <ul style="padding-left:18px; color:var(--text-muted); font-size:0.83rem; line-height:1.7; margin:0;">
+          <li>Applications should ideally be submitted at least <strong>24 hours</strong> before planned departure.</li>
+          <li>For overnight and home leaves, warden approval is mandatory before vacating the campus.</li>
+          <li>Ensure the emergency parent phone number is active and reachable.</li>
+          <li>Hand over room keys to security or warden desk before leaving.</li>
+        </ul>
+      </div>
+
+      <div class="card-custom">
+        <h4 style="font-size:0.95rem; font-weight:800; color:var(--text-dark); margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+          <i class="fas fa-user-graduate" style="color:#10b981;"></i> Applicant Profile
+        </h4>
+        <div style="font-size:0.82rem; color:var(--text-muted); display:flex; flex-direction:column; gap:6px;">
+          <div><strong>Student:</strong> {{ student.name }} ({{ student.student_id }})</div>
+          <div><strong>Course:</strong> {{ student.course }} &bull; {{ student.get_year_display }}</div>
+          <div><strong>Assigned Room:</strong> {% if student.get_room %}Room {{ student.get_room.room_no }}{% else %}Unassigned{% endif %}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

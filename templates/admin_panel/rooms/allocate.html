@@ -1,0 +1,321 @@
+{% extends "base_admin.html" %}
+{% block title %}Allocate Room{% endblock %}
+{% block page_title %}Room Allocation{% endblock %}
+
+{% block extra_head %}
+<style>
+  .bed-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .bed-slot-card {
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--card-bg);
+    color: var(--text-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .bed-slot-card.available:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+  }
+  .bed-slot-card.selected {
+    border-color: #10b981;
+    background: #ecfdf5;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+  }
+  .bed-slot-card.occupied {
+    background: var(--bg-main);
+    border-color: var(--border-color);
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+  [data-theme="dark"] .bed-slot-card {
+    background: var(--card-inner-bg);
+    color: var(--text-dark);
+  }
+  [data-theme="dark"] .bed-slot-card.selected {
+    background: rgba(16, 185, 129, 0.22);
+    border-color: #10b981;
+  }
+  [data-theme="dark"] .bed-slot-card.occupied {
+    background: #0b1120;
+    border-color: #334155;
+    color: var(--text-muted);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-dark); margin-bottom:4px;">Allocate Room to Student</h2>
+  <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">Assign an available hostel room and bed to a registered student.</p>
+</div>
+
+<div id="allocAlert" style="display:none; background:#fee2e2; color:#b91c1c; padding:12px 16px; border-radius:10px; font-size:0.85rem; font-weight:600; margin-bottom:20px; align-items:center; gap:8px;">
+  <i class="fas fa-triangle-exclamation"></i> <span id="allocAlertText"></span>
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:24px;">
+  <div class="card-custom">
+    <div style="display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--border-color); padding-bottom:14px; margin-bottom:20px;">
+      <div style="width:40px; height:40px; background:#dcfce7; color:#15803d; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+        <i class="fas fa-bed"></i>
+      </div>
+      <div>
+        <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-dark); margin:0;">Allocation Form</h3>
+        <span style="font-size:0.75rem; color:#64748b;">Assign room and specific bed slot</span>
+      </div>
+    </div>
+
+    <form method="post" id="allocForm">
+      {% csrf_token %}
+      <div style="margin-bottom:20px;">
+        <label class="form-label">Select Student <span style="color:#ef4444;">*</span></label>
+        {{ form.student }}
+        {% if form.student.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.student.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label class="form-label">Select Room <span style="color:#ef4444;">*</span></label>
+        {{ form.room }}
+        {% if form.room.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.room.errors.0 }}</div>{% endif %}
+      </div>
+
+      <!-- Interactive Bed Selection Box -->
+      <div class="card-inner-box" style="margin-bottom:20px; border-radius:14px; padding:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <label class="form-label" style="margin-bottom:0;">
+            <i class="fas fa-bed" style="color:var(--primary); margin-right:4px;"></i> Bed Allocation Number <span style="color:#ef4444;">*</span>
+          </label>
+          <span id="bedRuleBadge" class="badge-custom badge-secondary" style="font-size:0.72rem;">Min 1 (No Negative)</span>
+        </div>
+
+        <div style="margin-top:6px; margin-bottom:8px;">
+          {{ form.bed_number }}
+        </div>
+        <div id="bedHelperText" style="font-size:0.78rem; color:var(--text-muted); margin-top:4px;">
+          Bed number cannot be negative or zero (e.g. Bed 1, Bed 2, etc.)
+        </div>
+        {% if form.bed_number.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.bed_number.errors.0 }}</div>{% endif %}
+
+        <!-- Visual Bed Slot Selector -->
+        <div id="visualBedContainer" style="margin-top:14px; display:none;">
+          <div style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">
+            Click a bed to select:
+          </div>
+          <div class="bed-slots-grid" id="bedSlotsGrid"></div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:28px;">
+        <label class="form-label">Arrival Date <span style="color:#ef4444;">*</span></label>
+        {{ form.arrival_date }}
+        {% if form.arrival_date.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.arrival_date.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div style="display:flex; gap:12px; justify-content:flex-end;">
+        <a href="{% url 'booking_list' %}" class="btn-outline-custom">Cancel</a>
+        <button type="submit" class="btn-primary-custom" id="allocSubmitBtn">
+          <i class="fas fa-check"></i> Complete Allocation
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card-custom">
+    <div style="display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--border-color); padding-bottom:14px; margin-bottom:20px;">
+      <div style="width:40px; height:40px; background:rgba(3,105,161,0.15); color:#0284c7; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+        <i class="fas fa-door-open"></i>
+      </div>
+      <div>
+        <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-dark); margin:0;">Available Rooms Overview</h3>
+        <span style="font-size:0.75rem; color:var(--text-muted);">Live status of vacancies by room</span>
+      </div>
+    </div>
+
+    {% if available_rooms %}
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        {% for room in available_rooms %}
+        <div class="card-inner-box" style="padding:14px; border-radius:12px; transition:transform 0.2s ease;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <div>
+              <span style="font-weight:800; font-size:1rem; color:var(--text-dark);">Room {{ room.room_no }}</span>
+              <span style="color:var(--text-muted); font-size:0.82rem; margin-left:8px;">{{ room.room_type }} &bull; Floor {{ room.floor }}</span>
+            </div>
+            <span class="badge-custom badge-success" style="font-weight:700;">
+              {{ room.current_occupancy }}/{{ room.capacity }} beds taken
+            </span>
+          </div>
+
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+            {% for b in room.available_beds %}
+              <span style="background:#dcfce7; color:#166534; font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:12px;">
+                <i class="fas fa-check" style="margin-right:2px;"></i> Bed {{ b }} Free
+              </span>
+            {% endfor %}
+            {% for b in room.occupied_beds %}
+              <span style="background:#fee2e2; color:#991b1b; font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:12px;">
+                <i class="fas fa-user" style="margin-right:2px;"></i> Bed {{ b }} Taken
+              </span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+        <i class="fas fa-door-closed" style="font-size:2.5rem; margin-bottom:8px; opacity:0.5;"></i>
+        <p style="font-size:0.88rem; margin:0;">No available rooms found.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+const roomsData = {{ rooms_json|safe }};
+const roomSelect = document.getElementById('id_room');
+const bedInput = document.getElementById('id_bed_number');
+const visualBedContainer = document.getElementById('visualBedContainer');
+const bedSlotsGrid = document.getElementById('bedSlotsGrid');
+const bedRuleBadge = document.getElementById('bedRuleBadge');
+const bedHelperText = document.getElementById('bedHelperText');
+const allocForm = document.getElementById('allocForm');
+const allocAlert = document.getElementById('allocAlert');
+const allocAlertText = document.getElementById('allocAlertText');
+
+function onRoomSelected(roomId) {
+  if (!roomId || !roomsData[roomId]) {
+    visualBedContainer.style.display = 'none';
+    bedRuleBadge.textContent = 'Min 1 (No Negative)';
+    return;
+  }
+
+  const room = roomsData[roomId];
+  visualBedContainer.style.display = 'block';
+  bedSlotsGrid.innerHTML = '';
+
+  bedInput.min = 1;
+  bedInput.max = room.capacity;
+  bedRuleBadge.textContent = `Beds 1 to ${room.capacity}`;
+  bedHelperText.innerHTML = `Room ${roomId} has <strong>${room.capacity}</strong> bed(s). Negative bed numbers are not allowed.`;
+
+  // Render clickable bed slots
+  let firstAvailable = null;
+  for (let b = 1; b <= room.capacity; b++) {
+    const isOccupied = room.occupied_beds.includes(b);
+    const card = document.createElement('div');
+    card.className = 'bed-slot-card ' + (isOccupied ? 'occupied' : 'available');
+
+    if (!isOccupied && firstAvailable === null) {
+      firstAvailable = b;
+    }
+
+    card.innerHTML = `
+      <i class="fas fa-bed" style="font-size:1.2rem; color:${isOccupied ? '#94a3b8' : '#10b981'};"></i>
+      <div style="font-weight:700; font-size:0.82rem; color:${isOccupied ? '#64748b' : '#1e293b'};">Bed #${b}</div>
+      <span style="font-size:0.7rem; font-weight:700; color:${isOccupied ? '#dc2626' : '#059669'};">
+        ${isOccupied ? 'Occupied' : 'Available ✓'}
+      </span>
+    `;
+
+    if (!isOccupied) {
+      card.onclick = function() {
+        selectBed(b);
+      };
+    }
+
+    card.id = 'bedSlot_' + b;
+    bedSlotsGrid.appendChild(card);
+  }
+
+  // Pre-fill first available bed if input is empty or invalid
+  const curBed = parseInt(bedInput.value);
+  if (!curBed || curBed < 1 || curBed > room.capacity || room.occupied_beds.includes(curBed)) {
+    if (firstAvailable !== null) {
+      selectBed(firstAvailable);
+    }
+  } else {
+    selectBed(curBed);
+  }
+}
+
+function selectBed(bedNum) {
+  bedInput.value = bedNum;
+  document.querySelectorAll('.bed-slot-card').forEach(c => c.classList.remove('selected'));
+  const activeCard = document.getElementById('bedSlot_' + bedNum);
+  if (activeCard && !activeCard.classList.contains('occupied')) {
+    activeCard.classList.add('selected');
+  }
+}
+
+// Live Validation on Bed Input
+bedInput.addEventListener('input', function() {
+  const val = parseInt(this.value);
+  if (isNaN(val) || val < 1) {
+    this.style.borderColor = '#ef4444';
+  } else {
+    this.style.borderColor = '';
+  }
+  document.querySelectorAll('.bed-slot-card').forEach(c => c.classList.remove('selected'));
+  const activeCard = document.getElementById('bedSlot_' + val);
+  if (activeCard && !activeCard.classList.contains('occupied')) {
+    activeCard.classList.add('selected');
+  }
+});
+
+// Form Submit Validation Guard
+allocForm.addEventListener('submit', function(e) {
+  const roomId = roomSelect.value;
+  const bedVal = parseInt(bedInput.value);
+
+  // 1. Bed cannot go negative or zero
+  if (isNaN(bedVal) || bedVal < 1) {
+    e.preventDefault();
+    allocAlertText.textContent = "Bed number cannot be negative or zero. Please enter 1 or a positive bed number.";
+    allocAlert.style.display = 'flex';
+    bedInput.focus();
+    return;
+  }
+
+  // 2. Check against room limits
+  if (roomId && roomsData[roomId]) {
+    const room = roomsData[roomId];
+    if (bedVal > room.capacity) {
+      e.preventDefault();
+      allocAlertText.textContent = `Room ${roomId} has a capacity of only ${room.capacity} bed(s). Bed #${bedVal} is not valid.`;
+      allocAlert.style.display = 'flex';
+      bedInput.focus();
+      return;
+    }
+
+    if (room.occupied_beds.includes(bedVal)) {
+      e.preventDefault();
+      allocAlertText.textContent = `Bed #${bedVal} in Room ${roomId} is already occupied. Please select an available bed.`;
+      allocAlert.style.display = 'flex';
+      bedInput.focus();
+      return;
+    }
+  }
+
+  allocAlert.style.display = 'none';
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  if (roomSelect.value) {
+    onRoomSelected(roomSelect.value);
+  }
+});
+</script>
+{% endblock %}

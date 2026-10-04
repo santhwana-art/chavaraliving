@@ -1,0 +1,131 @@
+{% extends "base_admin.html" %}
+{% block title %}Fee Records{% endblock %}
+{% block page_title %}Fee Management{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+  <div>
+    <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-dark); margin-bottom:4px;">Hostel Fee Statements</h2>
+    <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">Track fee payments, dues, and overdue balances for all students.</p>
+  </div>
+  <a href="{% url 'fee_add' %}" class="btn-primary-custom">
+    <i class="fas fa-plus"></i> Create Fee Record
+  </a>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="card-custom" style="padding:16px 24px; margin-bottom:20px;">
+  <form method="get" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+    <div style="flex:1; min-width:240px; position:relative;">
+      <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search student name or payment ID..." style="padding-left:40px;">
+      <i class="fas fa-search" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+    </div>
+    <select name="status" class="form-select" style="width:auto; min-width:140px;">
+      <option value="">All Statuses</option>
+      <option value="Paid" {% if status_filter == 'Paid' %}selected{% endif %}>Paid</option>
+      <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
+      <option value="Overdue" {% if status_filter == 'Overdue' %}selected{% endif %}>Overdue</option>
+    </select>
+    <button type="submit" class="btn-primary-custom">Search</button>
+    {% if query or status_filter %}
+      <a href="{% url 'fee_list' %}" class="btn-outline-custom">Clear Filters</a>
+    {% endif %}
+  </form>
+</div>
+
+{% if fees %}
+<div class="table-responsive">
+  <table class="table-custom">
+    <thead>
+      <tr>
+        {% with next_dir=sort_dir|yesno:"asc,desc" %}
+        <th>
+          <a href="?q={{ query }}&status={{ status_filter }}&sort=payment_id&dir={% if sort_by == 'payment_id' %}{{ next_dir }}{% else %}asc{% endif %}" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:4px;">
+            Payment ID {% if sort_by == 'payment_id' %}<i class="fas fa-sort-{% if sort_dir == 'asc' %}up{% else %}down{% endif %}"></i>{% else %}<i class="fas fa-sort" style="opacity:0.3;"></i>{% endif %}
+          </a>
+        </th>
+        <th>
+          <a href="?q={{ query }}&status={{ status_filter }}&sort=student&dir={% if sort_by == 'student' %}{{ next_dir }}{% else %}asc{% endif %}" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:4px;">
+            Student Name {% if sort_by == 'student' %}<i class="fas fa-sort-{% if sort_dir == 'asc' %}up{% else %}down{% endif %}"></i>{% else %}<i class="fas fa-sort" style="opacity:0.3;"></i>{% endif %}
+          </a>
+        </th>
+        <th>Fee Description</th>
+        <th>Type</th>
+        <th>
+          <a href="?q={{ query }}&status={{ status_filter }}&sort=amount&dir={% if sort_by == 'amount' %}{{ next_dir }}{% else %}desc{% endif %}" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:4px;">
+            Amount (₹) {% if sort_by == 'amount' %}<i class="fas fa-sort-{% if sort_dir == 'asc' %}up{% else %}down{% endif %}"></i>{% else %}<i class="fas fa-sort" style="opacity:0.3;"></i>{% endif %}
+          </a>
+        </th>
+        <th>
+          <a href="?q={{ query }}&status={{ status_filter }}&sort=due_date&dir={% if sort_by == 'due_date' %}{{ next_dir }}{% else %}desc{% endif %}" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:4px;">
+            Due Date {% if sort_by == 'due_date' %}<i class="fas fa-sort-{% if sort_dir == 'asc' %}up{% else %}down{% endif %}"></i>{% else %}<i class="fas fa-sort" style="opacity:0.3;"></i>{% endif %}
+          </a>
+        </th>
+        <th>
+          <a href="?q={{ query }}&status={{ status_filter }}&sort=pay_date&dir={% if sort_by == 'pay_date' %}{{ next_dir }}{% else %}desc{% endif %}" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:4px;">
+            Paid Date {% if sort_by == 'pay_date' %}<i class="fas fa-sort-{% if sort_dir == 'asc' %}up{% else %}down{% endif %}"></i>{% else %}<i class="fas fa-sort" style="opacity:0.3;"></i>{% endif %}
+          </a>
+        </th>
+        <th>
+          <a href="?q={{ query }}&status={{ status_filter }}&sort=status&dir={% if sort_by == 'status' %}{{ next_dir }}{% else %}asc{% endif %}" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:4px;">
+            Status {% if sort_by == 'status' %}<i class="fas fa-sort-{% if sort_dir == 'asc' %}up{% else %}down{% endif %}"></i>{% else %}<i class="fas fa-sort" style="opacity:0.3;"></i>{% endif %}
+          </a>
+        </th>
+        {% endwith %}
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in fees %}
+      <tr>
+        <td style="font-weight:700; color:var(--primary);">{{ f.payment_id }}</td>
+        <td>
+          <div style="font-weight:700; color:var(--text-dark);">{{ f.student.name }}</div>
+          <div style="font-size:0.78rem; color:var(--text-muted);">{{ f.student.student_id }}</div>
+        </td>
+        <td style="font-weight:600; color:var(--text-dark);">{{ f.description|default:"Hostel Fee" }}</td>
+        <td><span class="badge-custom badge-secondary">{{ f.fee_type }}</span></td>
+        <td style="font-weight:800; color:var(--text-dark);">₹{{ f.amount }}</td>
+        <td>{{ f.due_date|date:"d M Y" }}</td>
+        <td>
+          {% if f.pay_date %}
+            <span style="color:#15803d; font-weight:600;">{{ f.pay_date|date:"d M Y" }}</span>
+          {% else %}
+            <span style="color:var(--text-muted); opacity:0.6;">—</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if f.status == 'Paid' %}
+            <span class="badge-custom badge-success"><i class="fas fa-check-circle"></i> Paid</span>
+          {% elif f.status == 'Pending' %}
+            <span class="badge-custom badge-warning"><i class="fas fa-clock"></i> Pending</span>
+          {% elif f.status == 'Overdue' %}
+            <span class="badge-custom badge-danger"><i class="fas fa-exclamation-triangle"></i> Overdue</span>
+          {% endif %}
+        </td>
+        <td>
+          <div style="display:flex; gap:8px;">
+            <a href="{% url 'fee_edit' f.pk %}" class="btn-outline-custom" style="padding:6px 12px; font-size:0.8rem;" title="Edit Fee">
+              <i class="fas fa-edit"></i>
+            </a>
+            <a href="{% url 'fee_delete' f.pk %}" class="btn-outline-custom" style="border-color:#ef4444; color:#ef4444 !important; padding:6px 12px; font-size:0.8rem;" title="Delete Fee">
+              <i class="fas fa-trash"></i>
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card-custom" style="text-align:center; padding:60px 20px;">
+  <i class="fas fa-file-invoice-dollar" style="font-size:3rem; color:var(--text-muted); margin-bottom:16px;"></i>
+  <h3 style="font-weight:700; margin-bottom:8px;">{% if query or status_filter %}No Fee Records Found{% else %}No Fee Statements{% endif %}</h3>
+  <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">{% if query or status_filter %}No records match your filter criteria.{% else %}Create fee records to start tracking student payments.{% endif %}</p>
+  {% if not query and not status_filter %}
+    <a href="{% url 'fee_add' %}" class="btn-primary-custom"><i class="fas fa-plus"></i> Create Fee Record</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

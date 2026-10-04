@@ -1,0 +1,61 @@
+{% extends "base_student.html" %}
+{% block title %}My Fee Records{% endblock %}
+{% block page_title %}My Fee Statement{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-dark); margin-bottom:4px;">Hostel Fee Statements & Dues</h2>
+  <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">View all past and current fee payment records.</p>
+</div>
+
+{% if fees %}
+<div class="table-responsive">
+  <table class="table-custom">
+    <thead>
+      <tr>
+        <th>Payment ID</th>
+        <th>Description</th>
+        <th>Fee Type</th>
+        <th>Amount (₹)</th>
+        <th>Due Date</th>
+        <th>Paid Date</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in fees %}
+      <tr>
+        <td style="font-weight:700; color:var(--primary);">{{ f.payment_id }}</td>
+        <td style="font-weight:600; color:var(--text-dark);">{{ f.description|default:"Hostel Fee" }}</td>
+        <td><span class="badge-custom badge-secondary">{{ f.fee_type }}</span></td>
+        <td style="font-weight:800; color:var(--text-dark);">₹{{ f.amount }}</td>
+        <td>{{ f.due_date|date:"d M Y" }}</td>
+        <td>
+          {% if f.pay_date %}
+            <span style="color:#15803d; font-weight:600;">{{ f.pay_date|date:"d M Y" }}</span>
+          {% else %}
+            <span style="color:var(--text-muted); opacity:0.6;">—</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if f.status == 'Paid' %}
+            <span class="badge-custom badge-success"><i class="fas fa-check-circle"></i> Paid</span>
+          {% elif f.status == 'Pending' %}
+            <span class="badge-custom badge-warning"><i class="fas fa-clock"></i> Pending</span>
+          {% elif f.status == 'Overdue' %}
+            <span class="badge-custom badge-danger"><i class="fas fa-exclamation-triangle"></i> Overdue</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card-custom" style="text-align:center; padding:60px 20px;">
+  <i class="fas fa-receipt" style="font-size:3rem; color:var(--primary-accent); margin-bottom:16px;"></i>
+  <h3 style="font-weight:700; margin-bottom:8px;">No Fee Records</h3>
+  <p style="color:var(--text-muted); font-size:0.9rem;">You have no billed statements or payments recorded at this time.</p>
+</div>
+{% endif %}
+{% endblock %}

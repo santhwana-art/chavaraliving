@@ -1,0 +1,133 @@
+{% extends "base_student.html" %}
+{% block title %}My Leave Requests — Chavara Living{% endblock %}
+{% block page_title %}Leave Applications{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+  <div>
+    <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-dark); margin:0 0 4px;">📅 My Leave Requests</h2>
+    <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">Apply for night-out or home visit leaves and track warden approvals.</p>
+  </div>
+  <a href="{% url 'student_leave_apply' %}" class="btn-primary-custom">
+    <i class="fas fa-plus"></i> Apply for Leave
+  </a>
+</div>
+
+<!-- Quick Stats -->
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-calendar-days"></i></div>
+    <div>
+      <div class="stat-value">{{ leaves.count }}</div>
+      <div class="stat-label">Total Applied</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
+    <div>
+      <div class="stat-value">{{ pending_count }}</div>
+      <div class="stat-label">Awaiting Approval</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-circle-check"></i></div>
+    <div>
+      <div class="stat-value">{{ approved_count }}</div>
+      <div class="stat-label">Approved Leaves</div>
+    </div>
+  </div>
+</div>
+
+<!-- Leaves Table Card -->
+<div class="card-custom" style="padding:0; overflow:hidden;">
+  {% if leaves %}
+  <div class="table-responsive">
+    <table class="table-custom" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Leave Type</th>
+          <th>Departure &amp; Return</th>
+          <th>Duration</th>
+          <th>Destination</th>
+          <th>Reason</th>
+          <th>Status</th>
+          <th style="text-align:right;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in leaves %}
+        <tr>
+          <td>
+            <span class="badge-custom badge-info" style="font-size:0.8rem;">
+              {{ l.leave_type }}
+            </span>
+          </td>
+          <td>
+            <div style="font-weight:700; color:var(--text-dark); font-size:0.85rem;">
+              {{ l.start_date|date:"d M Y" }} &rarr; {{ l.end_date|date:"d M Y" }}
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+              Applied on {{ l.applied_on|date:"d M Y, h:i A" }}
+            </div>
+          </td>
+          <td>
+            <span style="font-weight:700; font-size:0.85rem; color:var(--primary); background:rgba(37,99,235,.08); padding:3px 8px; border-radius:6px;">
+              {{ l.total_days }} day{{ l.total_days|pluralize }}
+            </span>
+          </td>
+          <td>
+            <span style="font-size:0.82rem; font-weight:600; color:var(--text-dark);">
+              <i class="fas fa-location-dot" style="color:#ef4444; font-size:0.75rem; margin-right:4px;"></i>
+              {{ l.destination_city|default:"Home" }}
+            </span>
+          </td>
+          <td style="max-width:220px;">
+            <div style="font-size:0.82rem; color:var(--text-dark); line-height:1.35;">
+              {{ l.reason|truncatechars:70 }}
+            </div>
+          </td>
+          <td>
+            {% if l.status == "Pending" %}
+              <span class="badge-custom badge-warning"><i class="fas fa-clock"></i> Pending</span>
+            {% elif l.status == "Approved" %}
+              <span class="badge-custom badge-success"><i class="fas fa-circle-check"></i> Approved</span>
+            {% elif l.status == "Rejected" %}
+              <span class="badge-custom badge-danger"><i class="fas fa-circle-xmark"></i> Rejected</span>
+            {% else %}
+              <span class="badge-custom badge-secondary">{{ l.status }}</span>
+            {% endif %}
+
+            {% if l.admin_remarks %}
+              <div style="font-size:0.72rem; color:var(--text-muted); margin-top:3px; max-width:150px;">
+                <em>Warden: {{ l.admin_remarks }}</em>
+              </div>
+            {% endif %}
+          </td>
+          <td style="text-align:right;">
+            {% if l.status == "Pending" %}
+              <form method="post" action="{% url 'student_leave_cancel' l.id %}" onsubmit="return confirm('Are you sure you want to cancel this leave application?');" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-outline-custom" style="padding:5px 10px; font-size:0.75rem; color:#ef4444; border-color:#fca5a5;">
+                  <i class="fas fa-ban"></i> Cancel
+                </button>
+              </form>
+            {% else %}
+              <span style="font-size:0.78rem; color:var(--text-muted);">&mdash;</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center; padding:48px 20px; color:var(--text-muted);">
+    <i class="fas fa-suitcase" style="font-size:2.8rem; opacity:0.35; margin-bottom:12px; display:block;"></i>
+    <p style="font-size:0.95rem; font-weight:600; margin-bottom:12px;">You haven't submitted any leave requests yet.</p>
+    <a href="{% url 'student_leave_apply' %}" class="btn-primary-custom" style="display:inline-flex;">
+      <i class="fas fa-plus"></i> Submit Leave Request
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

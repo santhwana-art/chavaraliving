@@ -1,0 +1,74 @@
+{% extends "base_admin.html" %}
+{% block title %}Complaints{% endblock %}
+{% block page_title %}Complaint Management{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-dark); margin-bottom:4px;">Hostel Complaints & Maintenance</h2>
+  <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">Review and resolve complaints lodged by hostel students.</p>
+</div>
+
+<!-- Status Filter Pills -->
+<div class="card-custom" style="padding:16px 24px; margin-bottom:20px;">
+  <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+    <span style="font-size:0.85rem; font-weight:700; color:var(--text-muted);">Filter Status:</span>
+    <a href="{% url 'complaint_list' %}" class="badge-custom {% if not status_filter %}badge-success{% else %}badge-secondary{% endif %}">All</a>
+    <a href="?status=Pending" class="badge-custom {% if status_filter == 'Pending' %}badge-warning{% else %}badge-secondary{% endif %}">Pending</a>
+    <a href="?status=In Progress" class="badge-custom {% if status_filter == 'In Progress' %}badge-info{% else %}badge-secondary{% endif %}">In Progress</a>
+    <a href="?status=Resolved" class="badge-custom {% if status_filter == 'Resolved' %}badge-success{% else %}badge-secondary{% endif %}">Resolved</a>
+  </div>
+</div>
+
+{% if complaints %}
+<div class="table-responsive">
+  <table class="table-custom">
+    <thead>
+      <tr>
+        <th>Complaint ID</th>
+        <th>Student Name</th>
+        <th>Title & Description</th>
+        <th>Submitted Date</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in complaints %}
+      <tr>
+        <td style="font-weight:700; color:var(--primary);">{{ c.complaint_id }}</td>
+        <td>
+          <div style="font-weight:700; color:var(--text-dark);">{{ c.student.name }}</div>
+          <div style="font-size:0.78rem; color:var(--text-muted);">{{ c.student.student_id }}</div>
+        </td>
+        <td>
+          <div style="font-weight:700; color:var(--text-dark);">{{ c.title }}</div>
+          <div style="font-size:0.82rem; color:var(--text-muted); margin-top:2px;">{{ c.description|truncatewords:12 }}</div>
+        </td>
+        <td>{{ c.submission_date|date:"d M Y" }}</td>
+        <td>
+          {% if c.status == 'Pending' %}
+            <span class="badge-custom badge-warning"><i class="fas fa-clock"></i> Pending</span>
+          {% elif c.status == 'In Progress' %}
+            <span class="badge-custom badge-info"><i class="fas fa-spinner fa-spin"></i> In Progress</span>
+          {% elif c.status == 'Resolved' %}
+            <span class="badge-custom badge-success"><i class="fas fa-check-circle"></i> Resolved</span>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{% url 'complaint_resolve' c.pk %}" class="btn-outline-custom" style="padding:6px 14px; font-size:0.82rem;">
+            <i class="fas fa-edit"></i> Update
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card-custom" style="text-align:center; padding:60px 20px;">
+  <i class="fas fa-smile" style="font-size:3rem; color:var(--primary-accent); margin-bottom:16px;"></i>
+  <h3 style="font-weight:700; margin-bottom:8px;">No Complaints Found</h3>
+  <p style="color:var(--text-muted); font-size:0.9rem;">No complaints match the selected filter criteria.</p>
+</div>
+{% endif %}
+{% endblock %}

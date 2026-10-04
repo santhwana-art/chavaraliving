@@ -1,0 +1,942 @@
+{% extends "base_admin.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ── Clickable stat card ── */
+.stat-card {
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s;
+}
+.stat-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(37,99,235,.08) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.22s;
+}
+.stat-card:hover::after { opacity: 1; }
+.stat-card:hover { transform: translateY(-4px) scale(1.015); box-shadow: 0 8px 32px rgba(37,99,235,.18); }
+.stat-card:active { transform: translateY(-1px) scale(1.005); }
+
+.stat-card .click-hint {
+  position: absolute;
+  bottom: 10px; right: 14px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity .22s;
+  display: flex; align-items: center; gap: 4px;
+}
+.stat-card:hover .click-hint { opacity: 1; }
+
+/* ── Modal backdrop ── */
+.dash-modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.dash-modal-backdrop.open {
+  display: flex;
+  animation: fadeInBackdrop .2s ease;
+}
+
+@keyframes fadeInBackdrop {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Modal box ── */
+.dash-modal {
+  background: var(--card-bg);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 780px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,.35);
+  animation: slideUpModal .28s cubic-bezier(.4,0,.2,1);
+  border: 1px solid var(--border-color);
+}
+
+@keyframes slideUpModal {
+  from { opacity: 0; transform: translateY(30px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.dash-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 26px 16px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+.dash-modal-icon {
+  width: 46px; height: 46px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+.dash-modal-icon.green  { background: rgba(22,163,74,.14); color: #16a34a; }
+.dash-modal-icon.blue   { background: rgba(37,99,235,.14); color: #2563eb; }
+.dash-modal-icon.orange { background: rgba(234,88,12,.14); color: #ea580c; }
+.dash-modal-icon.purple { background: rgba(124,58,237,.14); color: #7c3aed; }
+
+.dash-modal-title { font-size: 1.1rem; font-weight: 800; color: var(--text-dark); margin: 0; }
+.dash-modal-sub   { font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0; }
+.dash-modal-close {
+  margin-left: auto;
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; color: var(--text-muted);
+  transition: background .18s, color .18s;
+}
+.dash-modal-close:hover { background: #fee2e2; color: #b91c1c; }
+
+.dash-modal-body {
+  overflow-y: auto;
+  padding: 20px 26px 24px;
+  flex: 1;
+}
+.dash-modal-body::-webkit-scrollbar { width: 5px; }
+.dash-modal-body::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+
+/* ── Modal table ── */
+.modal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+.modal-table th {
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+}
+.modal-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-dark);
+  vertical-align: middle;
+}
+.modal-table tr:last-child td { border-bottom: none; }
+.modal-table tbody tr { transition: background .15s; }
+.modal-table tbody tr:hover { background: var(--bg-main); }
+
+.modal-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 0.78rem;
+  color: #fff;
+  background: var(--primary-gradient);
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+.modal-name-cell { display: flex; align-items: center; }
+
+.modal-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-muted);
+}
+.modal-empty i { font-size: 2.6rem; opacity: .35; display: block; margin-bottom: 10px; }
+.modal-empty p { font-size: 0.88rem; margin: 0; }
+
+.mbadge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.mbadge-success  { background: #dcfce7; color: #15803d; }
+.mbadge-warning  { background: #fef3c7; color: #b45309; }
+.mbadge-danger   { background: #fee2e2; color: #b91c1c; }
+.mbadge-info     { background: #dbeafe; color: #1d4ed8; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:28px;">
+  <h2 style="font-size:1.5rem; font-weight:800; color:var(--text-dark); margin-bottom:4px;">Admin Dashboard</h2>
+  <p style="color:var(--text-muted); font-size:0.9rem; margin:0;">Overview of student count, room allocations, pending dues, and active complaints. <em style="font-size:0.8rem;">Click any card to view details.</em></p>
+</div>
+
+<!-- STAT CARDS -->
+<div class="stats-grid">
+  <div class="stat-card" onclick="openModal('modal-students')" role="button" tabindex="0" aria-label="View all students">
+    <div class="stat-icon green"><i class="fas fa-user-graduate"></i></div>
+    <div>
+      <div class="stat-value" id="stat-students">{{ total_students }}</div>
+      <div class="stat-label">Total Students</div>
+    </div>
+    <span class="click-hint"><i class="fas fa-eye"></i> View</span>
+  </div>
+
+  <div class="stat-card" onclick="openModal('modal-rooms')" role="button" tabindex="0" aria-label="View occupied rooms">
+    <div class="stat-icon blue"><i class="fas fa-bed"></i></div>
+    <div>
+      <div class="stat-value" id="stat-rooms">{{ occupied_rooms }}/{{ total_rooms }}</div>
+      <div class="stat-label">Occupied Rooms</div>
+    </div>
+    <span class="click-hint"><i class="fas fa-eye"></i> View</span>
+  </div>
+
+  <div class="stat-card" onclick="openModal('modal-fees')" role="button" tabindex="0" aria-label="View pending payments">
+    <div class="stat-icon orange"><i class="fas fa-rupee-sign"></i></div>
+    <div>
+      <div class="stat-value" id="stat-fees">{{ pending_payments }}</div>
+      <div class="stat-label">Pending Payments</div>
+    </div>
+    <span class="click-hint"><i class="fas fa-eye"></i> View</span>
+  </div>
+
+  <div class="stat-card" onclick="openModal('modal-complaints')" role="button" tabindex="0" aria-label="View active complaints">
+    <div class="stat-icon purple"><i class="fas fa-exclamation-circle"></i></div>
+    <div>
+      <div class="stat-value" id="stat-complaints">{{ active_complaints }}</div>
+      <div class="stat-label">Active Complaints</div>
+    </div>
+    <span class="click-hint"><i class="fas fa-eye"></i> View</span>
+  </div>
+
+  <div class="stat-card" onclick="openModal('modal-mess')" role="button" tabindex="0" aria-label="View mess subscribers">
+    <div class="stat-icon orange" style="background:rgba(234,88,12,.14); color:#ea580c;"><i class="fas fa-utensils"></i></div>
+    <div>
+      <div class="stat-value" id="stat-mess">{{ active_mess_count }}</div>
+      <div class="stat-label">Mess Subscribers</div>
+    </div>
+    <span class="click-hint"><i class="fas fa-eye"></i> View</span>
+  </div>
+
+  <div class="stat-card" onclick="openModal('modal-leaves')" role="button" tabindex="0" aria-label="View pending leaves">
+    <div class="stat-icon green" style="background:rgba(16,185,129,.14); color:#10b981;"><i class="fas fa-calendar-check"></i></div>
+    <div>
+      <div class="stat-value" id="stat-leaves">{{ pending_leaves_count }}</div>
+      <div class="stat-label">Pending Leaves</div>
+    </div>
+    <span class="click-hint"><i class="fas fa-eye"></i> View</span>
+  </div>
+</div>
+
+<!-- MODAL: Pending Leave Requests -->
+<div class="dash-modal-backdrop" id="modal-leaves" onclick="closeModalOnBackdrop(event, 'modal-leaves')">
+  <div class="dash-modal" role="dialog" aria-modal="true">
+    <div class="dash-modal-header">
+      <div class="dash-modal-icon green" style="background:rgba(16,185,129,.14); color:#10b981;"><i class="fas fa-calendar-check"></i></div>
+      <div>
+        <div class="dash-modal-title">Pending Leave Requests</div>
+        <div class="dash-modal-sub">{{ pending_leaves_count }} application{{ pending_leaves_count|pluralize }} awaiting review</div>
+      </div>
+      <button class="dash-modal-close" onclick="closeModal('modal-leaves')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="dash-modal-body">
+      {% if pending_leaves_list %}
+        <table class="modal-table">
+          <thead>
+            <tr><th>Student</th><th>Type</th><th>Dates</th><th>Phone</th><th>Reason</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            {% for l in pending_leaves_list %}
+            <tr>
+              <td>
+                <div class="modal-name-cell">
+                  <div class="modal-avatar">{{ l.student.name|first|upper }}</div>
+                  <div>
+                    <div style="font-weight:700;">{{ l.student.name }}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">{{ l.student.student_id }}</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="mbadge mbadge-info">{{ l.leave_type }}</span></td>
+              <td style="font-size:0.8rem; font-weight:600;">{{ l.start_date|date:"d M" }} &rarr; {{ l.end_date|date:"d M" }} ({{ l.total_days }}d)</td>
+              <td style="font-family:monospace; font-size:0.8rem;">{{ l.parent_contact }}</td>
+              <td style="font-size:0.8rem; max-width:140px;">{{ l.reason|truncatechars:45 }}</td>
+              <td>
+                <a href="{% url 'admin_leave_list' %}?status=Pending" class="btn-primary-custom" style="padding:4px 10px; font-size:0.75rem; text-decoration:none;">Review</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="modal-empty"><i class="fas fa-calendar-check" style="color:#10b981;opacity:.6;"></i><p>No pending leave requests!</p></div>
+      {% endif %}
+      <div style="margin-top:16px; text-align:right;">
+        <a href="{% url 'admin_leave_list' %}" class="btn-primary-custom" style="text-decoration:none; padding:8px 16px; font-size:0.85rem; display:inline-flex;">
+          <i class="fas fa-arrow-right"></i> Open Leave Management
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Mess Subscribers -->
+<div class="dash-modal-backdrop" id="modal-mess" onclick="closeModalOnBackdrop(event, 'modal-mess')">
+  <div class="dash-modal" role="dialog" aria-modal="true">
+    <div class="dash-modal-header">
+      <div class="dash-modal-icon orange" style="background:rgba(234,88,12,.14); color:#ea580c;"><i class="fas fa-utensils"></i></div>
+      <div>
+        <div class="dash-modal-title">Active Mess Subscribers</div>
+        <div class="dash-modal-sub">{{ active_mess_count }} student{{ active_mess_count|pluralize }} subscribed &bull; South Indian Mess</div>
+      </div>
+      <button class="dash-modal-close" onclick="closeModal('modal-mess')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="dash-modal-body">
+      {% if active_mess_subscribers %}
+        <table class="modal-table">
+          <thead>
+            <tr><th>#</th><th>Student</th><th>Plan</th><th>Paid Amount</th><th>Start Date</th><th>Valid Until</th><th>Remaining</th></tr>
+          </thead>
+          <tbody>
+            {% for sub in active_mess_subscribers %}
+            <tr>
+              <td style="color:var(--text-muted); font-size:0.78rem; font-weight:600;">{{ forloop.counter }}</td>
+              <td>
+                <div class="modal-name-cell">
+                  <div class="modal-avatar">{{ sub.student.name|first|upper }}</div>
+                  <div>
+                    <div style="font-weight:700;">{{ sub.student.name }}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">{{ sub.student.student_id }}</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="mbadge mbadge-info">{{ sub.get_plan_display }}</span></td>
+              <td style="font-weight:800; color:var(--primary);">&#8377;{{ sub.amount }}</td>
+              <td style="color:var(--text-muted); font-size:0.8rem;">{{ sub.start_date|date:"d M Y" }}</td>
+              <td style="font-weight:600; font-size:0.8rem;">{{ sub.end_date|date:"d M Y" }}</td>
+              <td><span class="mbadge mbadge-success">{{ sub.remaining_days }} days</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="modal-empty"><i class="fas fa-utensils"></i><p>No students have opted for mess currently.</p></div>
+      {% endif %}
+      <div style="margin-top:16px; text-align:right;">
+        <a href="{% url 'admin_mess_dashboard' %}" class="btn-primary-custom" style="text-decoration:none; padding:8px 16px; font-size:0.85rem; display:inline-flex;">
+          <i class="fas fa-arrow-right"></i> Open Mess Management
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 1: All Students -->
+<div class="dash-modal-backdrop" id="modal-students" onclick="closeModalOnBackdrop(event, 'modal-students')">
+  <div class="dash-modal" role="dialog" aria-modal="true">
+    <div class="dash-modal-header">
+      <div class="dash-modal-icon green"><i class="fas fa-user-graduate"></i></div>
+      <div>
+        <div class="dash-modal-title">All Registered Students</div>
+        <div class="dash-modal-sub">{{ total_students }} student{{ total_students|pluralize }} in the hostel</div>
+      </div>
+      <button class="dash-modal-close" onclick="closeModal('modal-students')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="dash-modal-body">
+      {% if all_students %}
+        <table class="modal-table">
+          <thead>
+            <tr><th>#</th><th>Student</th><th>ID</th><th>Course</th><th>Year</th><th>Joined</th></tr>
+          </thead>
+          <tbody>
+            {% for s in all_students %}
+            <tr>
+              <td style="color:var(--text-muted); font-size:0.78rem; font-weight:600;">{{ forloop.counter }}</td>
+              <td>
+                <div class="modal-name-cell">
+                  <div class="modal-avatar">{{ s.name|first|upper }}</div>
+                  <div>
+                    <div style="font-weight:700;">{{ s.name }}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">{{ s.user.username }}</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="mbadge mbadge-info">{{ s.student_id }}</span></td>
+              <td>{{ s.course }}</td>
+              <td>{{ s.get_year_display }}</td>
+              <td style="color:var(--text-muted); font-size:0.8rem;">{{ s.date_of_admission|date:"d M Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="modal-empty"><i class="fas fa-users-slash"></i><p>No students registered yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 2: Occupied Rooms -->
+<div class="dash-modal-backdrop" id="modal-rooms" onclick="closeModalOnBackdrop(event, 'modal-rooms')">
+  <div class="dash-modal" role="dialog" aria-modal="true">
+    <div class="dash-modal-header">
+      <div class="dash-modal-icon blue"><i class="fas fa-bed"></i></div>
+      <div>
+        <div class="dash-modal-title">Occupied Rooms &mdash; Active Bookings</div>
+        <div class="dash-modal-sub">{{ occupied_rooms }} occupied out of {{ total_rooms }} total rooms</div>
+      </div>
+      <button class="dash-modal-close" onclick="closeModal('modal-rooms')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="dash-modal-body">
+      {% if occupied_room_bookings %}
+        <table class="modal-table">
+          <thead>
+            <tr><th>Room</th><th>Student</th><th>Bed #</th><th>Type</th><th>Floor / Block</th><th>Since</th></tr>
+          </thead>
+          <tbody>
+            {% for b in occupied_room_bookings %}
+            <tr>
+              <td style="font-weight:800; color:var(--primary);">{{ b.room.room_no }}</td>
+              <td>
+                <div class="modal-name-cell">
+                  <div class="modal-avatar">{{ b.student.name|first|upper }}</div>
+                  <div>
+                    <div style="font-weight:700;">{{ b.student.name }}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">{{ b.student.student_id }}</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="mbadge mbadge-info"><i class="fas fa-bed" style="font-size:.7rem;"></i> {{ b.bed_number }}</span></td>
+              <td>
+                {% if b.room.room_type == "Single" %}<span class="mbadge mbadge-success">Single</span>
+                {% elif b.room.room_type == "Double" %}<span class="mbadge mbadge-info">Double</span>
+                {% else %}<span class="mbadge mbadge-warning">Triple</span>{% endif %}
+              </td>
+              <td style="color:var(--text-muted);">Floor {{ b.room.floor }} &bull; {{ b.room.block }}</td>
+              <td style="color:var(--text-muted); font-size:0.8rem;">{{ b.arrival_date|date:"d M Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="modal-empty"><i class="fas fa-door-open"></i><p>No active room bookings at this time.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 3: Pending Payments -->
+<div class="dash-modal-backdrop" id="modal-fees" onclick="closeModalOnBackdrop(event, 'modal-fees')">
+  <div class="dash-modal" role="dialog" aria-modal="true">
+    <div class="dash-modal-header">
+      <div class="dash-modal-icon orange"><i class="fas fa-rupee-sign"></i></div>
+      <div>
+        <div class="dash-modal-title">Pending &amp; Overdue Payments</div>
+        <div class="dash-modal-sub">{{ pending_payments }} unpaid fee record{{ pending_payments|pluralize }} requiring attention</div>
+      </div>
+      <button class="dash-modal-close" onclick="closeModal('modal-fees')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="dash-modal-body">
+      {% if pending_fee_records %}
+        <table class="modal-table">
+          <thead>
+            <tr><th>Payment ID</th><th>Student</th><th>Type</th><th>Amount</th><th>Due Date</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            {% for f in pending_fee_records %}
+            <tr>
+              <td style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--text-muted);">{{ f.payment_id }}</td>
+              <td>
+                <div class="modal-name-cell">
+                  <div class="modal-avatar">{{ f.student.name|first|upper }}</div>
+                  <div>
+                    <div style="font-weight:700;">{{ f.student.name }}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">{{ f.student.student_id }}</div>
+                  </div>
+                </div>
+              </td>
+              <td style="color:var(--text-muted);">{{ f.fee_type }}</td>
+              <td style="font-weight:800;">&#8377;{{ f.amount }}</td>
+              <td style="font-size:0.82rem;">{{ f.due_date|date:"d M Y" }}</td>
+              <td>
+                {% if f.status == "Overdue" %}
+                  <span class="mbadge mbadge-danger"><i class="fas fa-circle-exclamation" style="font-size:.7rem;"></i> Overdue</span>
+                {% else %}
+                  <span class="mbadge mbadge-warning"><i class="fas fa-clock" style="font-size:.7rem;"></i> Pending</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="modal-empty"><i class="fas fa-check-circle" style="color:#16a34a;opacity:.6;"></i><p>All fee records are up to date!</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 4: Active Complaints -->
+<div class="dash-modal-backdrop" id="modal-complaints" onclick="closeModalOnBackdrop(event, 'modal-complaints')">
+  <div class="dash-modal" role="dialog" aria-modal="true">
+    <div class="dash-modal-header">
+      <div class="dash-modal-icon purple"><i class="fas fa-exclamation-circle"></i></div>
+      <div>
+        <div class="dash-modal-title">Active Complaints</div>
+        <div class="dash-modal-sub">{{ active_complaints }} complaint{{ active_complaints|pluralize }} awaiting resolution</div>
+      </div>
+      <button class="dash-modal-close" onclick="closeModal('modal-complaints')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="dash-modal-body">
+      {% if active_complaint_list %}
+        <table class="modal-table">
+          <thead>
+            <tr><th>ID</th><th>Student</th><th>Title / Detail</th><th>Status</th><th>Filed On</th></tr>
+          </thead>
+          <tbody>
+            {% for c in active_complaint_list %}
+            <tr>
+              <td style="font-family:monospace; font-weight:700; font-size:0.8rem; color:var(--text-muted);">{{ c.complaint_id }}</td>
+              <td>
+                <div class="modal-name-cell">
+                  <div class="modal-avatar">{{ c.student.name|first|upper }}</div>
+                  <div>
+                    <div style="font-weight:700;">{{ c.student.name }}</div>
+                    <div style="font-size:0.75rem; color:var(--text-muted);">{{ c.student.student_id }}</div>
+                  </div>
+                </div>
+              </td>
+              <td style="max-width:220px;">
+                <div style="font-weight:600;">{{ c.title|truncatechars:40 }}</div>
+                {% if c.description %}
+                  <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">{{ c.description|truncatechars:60 }}</div>
+                {% endif %}
+              </td>
+              <td>
+                {% if c.status == "Pending" %}
+                  <span class="mbadge mbadge-warning"><i class="fas fa-clock" style="font-size:.7rem;"></i> Pending</span>
+                {% elif c.status == "In Progress" %}
+                  <span class="mbadge mbadge-info"><i class="fas fa-spinner" style="font-size:.7rem;"></i> In Progress</span>
+                {% endif %}
+              </td>
+              <td style="color:var(--text-muted); font-size:0.8rem; white-space:nowrap;">{{ c.submission_date|date:"d M Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="modal-empty"><i class="fas fa-face-smile" style="color:#16a34a;opacity:.6;"></i><p>No active complaints. All good!</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- CHARTS (clickable) -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap:24px; margin-bottom:24px;">
+  <div class="card-custom" style="cursor:pointer; transition:transform .2s, box-shadow .2s; position:relative;" onclick="openModal('modal-room-chart')" onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 24px rgba(0,0,0,.12)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
+    <div style="margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-dark); margin:0;">
+        <i class="fas fa-chart-pie" style="color:var(--primary); margin-right:8px;"></i> Room Type Distribution
+      </h3>
+      <span style="font-size:0.7rem; color:var(--text-muted); display:flex; align-items:center; gap:4px;"><i class="fas fa-expand"></i> Click to expand</span>
+    </div>
+    {% if single_count > 0 or double_count > 0 or triple_count > 0 %}
+      <div style="height:250px; position:relative;">
+        <canvas id="roomTypeChart" data-single="{{ single_count }}" data-double="{{ double_count }}" data-triple="{{ triple_count }}"></canvas>
+      </div>
+    {% else %}
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+        <i class="fas fa-door-open" style="font-size:2.5rem; margin-bottom:8px; opacity:0.5;"></i>
+        <p style="font-size:0.88rem; margin:0;">No rooms added yet.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="card-custom" style="cursor:pointer; transition:transform .2s, box-shadow .2s; position:relative;" onclick="openModal('modal-fee-chart')" onmouseenter="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 24px rgba(0,0,0,.12)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
+    <div style="margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-dark); margin:0;">
+        <i class="fas fa-chart-bar" style="color:var(--primary); margin-right:8px;"></i> Fee Payment Status
+      </h3>
+      <span style="font-size:0.7rem; color:var(--text-muted); display:flex; align-items:center; gap:4px;"><i class="fas fa-expand"></i> Click to expand</span>
+    </div>
+    {% if paid_count > 0 or pending_count > 0 or overdue_count > 0 %}
+      <div style="height:250px; position:relative;">
+        <canvas id="feeStatusChart" data-paid="{{ paid_count }}" data-pending="{{ pending_count }}" data-overdue="{{ overdue_count }}"></canvas>
+      </div>
+    {% else %}
+      <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
+        <i class="fas fa-rupee-sign" style="font-size:2.5rem; margin-bottom:8px; opacity:0.5;"></i>
+        <p style="font-size:0.88rem; margin:0;">No fee records found.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- MODAL: Room Type Distribution Detail -->
+<div class="dash-modal-backdrop" id="modal-room-chart" onclick="closeModalOnBackdrop(event, 'modal-room-chart')">
+  <div class="dash-modal" role="dialog" aria-modal="true" style="max-width:700px;">
+    <div class="dash-modal-header">
+      <div class="dash-modal-icon blue"><i class="fas fa-chart-pie"></i></div>
+      <div>
+        <div class="dash-modal-title">Room Type Distribution — Full Breakdown</div>
+        <div class="dash-modal-sub">{{ total_rooms }} total rooms: {{ single_count }} Single, {{ double_count }} Double, {{ triple_count }} Triple</div>
+      </div>
+      <button class="dash-modal-close" onclick="closeModal('modal-room-chart')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="dash-modal-body">
+      <!-- Single Rooms -->
+      <div style="margin-bottom:20px;">
+        <div style="font-weight:800; font-size:0.88rem; color:#16a34a; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          <span style="display:inline-block; width:12px; height:12px; border-radius:3px; background:#153e32;"></span>
+          Single Occupancy ({{ single_count }} rooms)
+        </div>
+        {% if single_rooms %}
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+          {% for r in single_rooms %}
+          <span class="mbadge mbadge-success" style="font-size:.75rem;">
+            <i class="fas fa-door-open" style="font-size:.65rem;"></i> {{ r.room_no }} — Floor {{ r.floor }}
+            {% if r.status == "Occupied" %}<i class="fas fa-circle" style="font-size:.45rem; color:#b91c1c; margin-left:4px;" title="Occupied"></i>{% endif %}
+          </span>
+          {% endfor %}
+        </div>
+        {% else %}<p style="color:var(--text-muted); font-size:0.82rem; margin:0;">No single rooms.</p>{% endif %}
+      </div>
+
+      <!-- Double Rooms -->
+      <div style="margin-bottom:20px;">
+        <div style="font-weight:800; font-size:0.88rem; color:#2563eb; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          <span style="display:inline-block; width:12px; height:12px; border-radius:3px; background:#2e7d32;"></span>
+          Double Occupancy ({{ double_count }} rooms)
+        </div>
+        {% if double_rooms %}
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+          {% for r in double_rooms %}
+          <span class="mbadge mbadge-info" style="font-size:.75rem;">
+            <i class="fas fa-door-open" style="font-size:.65rem;"></i> {{ r.room_no }} — Floor {{ r.floor }}
+            {% if r.status == "Occupied" %}<i class="fas fa-circle" style="font-size:.45rem; color:#b91c1c; margin-left:4px;" title="Occupied"></i>{% endif %}
+          </span>
+          {% endfor %}
+        </div>
+        {% else %}<p style="color:var(--text-muted); font-size:0.82rem; margin:0;">No double rooms.</p>{% endif %}
+      </div>
+
+      <!-- Triple Rooms -->
+      <div>
+        <div style="font-weight:800; font-size:0.88rem; color:#ea580c; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          <span style="display:inline-block; width:12px; height:12px; border-radius:3px; background:#4caf50;"></span>
+          Triple Occupancy ({{ triple_count }} rooms)
+        </div>
+        {% if triple_rooms %}
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+          {% for r in triple_rooms %}
+          <span class="mbadge mbadge-warning" style="font-size:.75rem;">
+            <i class="fas fa-door-open" style="font-size:.65rem;"></i> {{ r.room_no }} — Floor {{ r.floor }}
+            {% if r.status == "Occupied" %}<i class="fas fa-circle" style="font-size:.45rem; color:#b91c1c; margin-left:4px;" title="Occupied"></i>{% endif %}
+          </span>
+          {% endfor %}
+        </div>
+        {% else %}<p style="color:var(--text-muted); font-size:0.82rem; margin:0;">No triple rooms.</p>{% endif %}
+      </div>
+
+      <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border-color); font-size:0.75rem; color:var(--text-muted);">
+        <i class="fas fa-circle" style="font-size:.45rem; color:#b91c1c; margin-right:4px;"></i> Red dot indicates currently occupied rooms
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Fee Payment Status Detail -->
+<div class="dash-modal-backdrop" id="modal-fee-chart" onclick="closeModalOnBackdrop(event, 'modal-fee-chart')">
+  <div class="dash-modal" role="dialog" aria-modal="true" style="max-width:780px;">
+    <div class="dash-modal-header">
+      <div class="dash-modal-icon orange"><i class="fas fa-chart-bar"></i></div>
+      <div>
+        <div class="dash-modal-title">Fee Payment Status — Full Breakdown</div>
+        <div class="dash-modal-sub">{{ paid_count }} Paid, {{ pending_count }} Pending, {{ overdue_count }} Overdue</div>
+      </div>
+      <button class="dash-modal-close" onclick="closeModal('modal-fee-chart')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="dash-modal-body">
+      <!-- Paid -->
+      <div style="margin-bottom:18px;">
+        <div style="font-weight:800; font-size:0.88rem; color:#15803d; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+          <span style="display:inline-block; width:12px; height:12px; border-radius:3px; background:#15803d;"></span>
+          Paid ({{ paid_count }})
+        </div>
+        {% if paid_fees %}
+        <table class="modal-table">
+          <thead><tr><th>ID</th><th>Student</th><th>Amount</th><th>Paid On</th></tr></thead>
+          <tbody>
+            {% for f in paid_fees %}
+            <tr>
+              <td style="font-family:monospace; font-size:.78rem; color:var(--text-muted);">{{ f.payment_id }}</td>
+              <td style="font-weight:600;">{{ f.student.name }}</td>
+              <td style="font-weight:700;">&#8377;{{ f.amount }}</td>
+              <td style="font-size:.82rem; color:var(--text-muted);">{{ f.pay_date|date:"d M Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}<p style="color:var(--text-muted); font-size:0.82rem;">No paid records.</p>{% endif %}
+      </div>
+
+      <!-- Pending -->
+      <div style="margin-bottom:18px;">
+        <div style="font-weight:800; font-size:0.88rem; color:#b45309; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+          <span style="display:inline-block; width:12px; height:12px; border-radius:3px; background:#b45309;"></span>
+          Pending ({{ pending_count }})
+        </div>
+        {% if pending_fees_list %}
+        <table class="modal-table">
+          <thead><tr><th>ID</th><th>Student</th><th>Amount</th><th>Due Date</th></tr></thead>
+          <tbody>
+            {% for f in pending_fees_list %}
+            <tr>
+              <td style="font-family:monospace; font-size:.78rem; color:var(--text-muted);">{{ f.payment_id }}</td>
+              <td style="font-weight:600;">{{ f.student.name }}</td>
+              <td style="font-weight:700;">&#8377;{{ f.amount }}</td>
+              <td style="font-size:.82rem; color:#b45309;">{{ f.due_date|date:"d M Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}<p style="color:var(--text-muted); font-size:0.82rem;">No pending records.</p>{% endif %}
+      </div>
+
+      <!-- Overdue -->
+      <div>
+        <div style="font-weight:800; font-size:0.88rem; color:#b91c1c; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+          <span style="display:inline-block; width:12px; height:12px; border-radius:3px; background:#b91c1c;"></span>
+          Overdue ({{ overdue_count }})
+        </div>
+        {% if overdue_fees %}
+        <table class="modal-table">
+          <thead><tr><th>ID</th><th>Student</th><th>Amount</th><th>Due Date</th></tr></thead>
+          <tbody>
+            {% for f in overdue_fees %}
+            <tr>
+              <td style="font-family:monospace; font-size:.78rem; color:var(--text-muted);">{{ f.payment_id }}</td>
+              <td style="font-weight:600;">{{ f.student.name }}</td>
+              <td style="font-weight:700;">&#8377;{{ f.amount }}</td>
+              <td style="font-size:.82rem; color:#b91c1c; font-weight:700;">{{ f.due_date|date:"d M Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}<p style="color:var(--text-muted); font-size:0.82rem;">No overdue records. 🎉</p>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RECENT ACTIVITY -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:24px;">
+  <div class="card-custom">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border-color);">
+      <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-dark); margin:0;"><i class="fas fa-user-graduate" style="color:var(--primary); margin-right:8px;"></i> Recent Students</h3>
+      <a href="{% url 'student_list' %}" style="font-size:0.82rem; font-weight:700; color:var(--primary); text-decoration:none;">View All &rarr;</a>
+    </div>
+    {% if recent_students %}
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        {% for s in recent_students %}
+        <div style="display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--border-color);">
+          <div style="width:34px; height:34px; background:var(--primary-gradient); color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem;">{{ s.name|first|upper }}</div>
+          <div>
+            <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark);">{{ s.name }}</div>
+            <div style="font-size:0.78rem; color:var(--text-muted);">{{ s.student_id }} &bull; {{ s.course }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="color:var(--text-muted); font-size:0.88rem; text-align:center; padding:20px 0;">No students registered yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="card-custom">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border-color);">
+      <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-dark); margin:0;"><i class="fas fa-exclamation-circle" style="color:#c2410c; margin-right:8px;"></i> Recent Complaints</h3>
+      <a href="{% url 'complaint_list' %}" style="font-size:0.82rem; font-weight:700; color:var(--primary); text-decoration:none;">View All &rarr;</a>
+    </div>
+    {% if recent_complaints %}
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        {% for c in recent_complaints %}
+        <div style="padding:8px 0; border-bottom:1px solid var(--border-color);">
+          <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark);">{{ c.title|truncatechars:35 }}</div>
+          <div style="font-size:0.78rem; color:var(--text-muted); margin:2px 0;">{{ c.student.name }} &bull; {{ c.submission_date|date:"d M Y" }}</div>
+          {% if c.status == 'Pending' %}<span class="badge-custom badge-warning"><i class="fas fa-clock"></i> Pending</span>
+          {% elif c.status == 'In Progress' %}<span class="badge-custom badge-info"><i class="fas fa-spinner"></i> In Progress</span>
+          {% elif c.status == 'Resolved' %}<span class="badge-custom badge-success"><i class="fas fa-check-circle"></i> Resolved</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="color:var(--text-muted); font-size:0.88rem; text-align:center; padding:20px 0;">No active complaints.</p>
+    {% endif %}
+  </div>
+
+  <div class="card-custom">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border-color);">
+      <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-dark); margin:0;"><i class="fas fa-rupee-sign" style="color:var(--primary); margin-right:8px;"></i> Recent Fees</h3>
+      <a href="{% url 'fee_list' %}" style="font-size:0.82rem; font-weight:700; color:var(--primary); text-decoration:none;">View All &rarr;</a>
+    </div>
+    {% if recent_fees %}
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        {% for f in recent_fees %}
+        <div style="padding:8px 0; border-bottom:1px solid var(--border-color);">
+          <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark);">{{ f.student.name }}</div>
+          <div style="font-size:0.78rem; color:var(--text-muted); margin:2px 0;">&#8377;{{ f.amount }} &bull; Due: {{ f.due_date|date:"d M Y" }}</div>
+          {% if f.status == 'Paid' %}<span class="badge-custom badge-success">Paid</span>
+          {% elif f.status == 'Pending' %}<span class="badge-custom badge-warning">Pending</span>
+          {% elif f.status == 'Overdue' %}<span class="badge-custom badge-danger">Overdue</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="color:var(--text-muted); font-size:0.88rem; text-align:center; padding:20px 0;">No fee records recorded.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openModal(id) {
+  var el = document.getElementById(id);
+  if (el) { el.classList.add('open'); document.body.style.overflow = 'hidden'; }
+}
+function closeModal(id) {
+  var el = document.getElementById(id);
+  if (el) { el.classList.remove('open'); document.body.style.overflow = ''; }
+}
+function closeModalOnBackdrop(e, id) {
+  if (e.target === e.currentTarget) closeModal(id);
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.dash-modal-backdrop.open').forEach(function(el) {
+      el.classList.remove('open'); document.body.style.overflow = '';
+    });
+  }
+});
+document.querySelectorAll('.stat-card[tabindex]').forEach(function(card) {
+  card.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+  });
+});
+
+let roomChartInst = null;
+let feeChartInst = null;
+
+function renderDashboardCharts() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const textColor = isDark ? '#f8fafc' : '#0f172a';
+  const mutedColor = isDark ? '#94a3b8' : '#64748b';
+  const gridColor = isDark ? '#334155' : '#e2e8f0';
+
+  var roomCanvas = document.getElementById('roomTypeChart');
+  if (roomCanvas) {
+    if (roomChartInst) roomChartInst.destroy();
+    var single = parseInt(roomCanvas.dataset.single || '0', 10);
+    var dbl    = parseInt(roomCanvas.dataset.double || '0', 10);
+    var triple = parseInt(roomCanvas.dataset.triple || '0', 10);
+    roomChartInst = new Chart(roomCanvas.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Single Occupancy', 'Double Occupancy', 'Triple Occupancy'],
+        datasets: [{
+          data: [single, dbl, triple],
+          backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6'],
+          borderWidth: isDark ? 2 : 1,
+          borderColor: isDark ? '#1e293b' : '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: textColor,
+              padding: 14,
+              font: { size: 12, weight: 600 }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  var feeCanvas = document.getElementById('feeStatusChart');
+  if (feeCanvas) {
+    if (feeChartInst) feeChartInst.destroy();
+    var paid    = parseInt(feeCanvas.dataset.paid    || '0', 10);
+    var pending = parseInt(feeCanvas.dataset.pending || '0', 10);
+    var overdue = parseInt(feeCanvas.dataset.overdue || '0', 10);
+    feeChartInst = new Chart(feeCanvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['Paid', 'Pending', 'Overdue'],
+        datasets: [{
+          label: 'Fee Records',
+          data: [paid, pending, overdue],
+          backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+          borderRadius: 8,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { color: mutedColor, stepSize: 1 },
+            grid: { color: gridColor }
+          },
+          x: {
+            ticks: { color: mutedColor, font: { weight: 600 } },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', renderDashboardCharts);
+
+// Re-render charts when theme changes
+const themeObserver = new MutationObserver(function(mutations) {
+  mutations.forEach(function(m) {
+    if (m.attributeName === 'data-theme') {
+      renderDashboardCharts();
+    }
+  });
+});
+themeObserver.observe(document.documentElement, { attributes: true });
+</script>
+{% endblock %}

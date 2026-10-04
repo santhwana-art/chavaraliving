@@ -1,0 +1,116 @@
+{% extends "base_admin.html" %}
+{% block title %}Students{% endblock %}
+{% block page_title %}Student Management{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+  <div>
+    <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-dark); margin-bottom:4px;">Student Records</h2>
+    <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">Manage student registrations, courses, and room allocations.</p>
+  </div>
+  <a href="{% url 'student_add' %}" class="btn-primary-custom">
+    <i class="fas fa-user-plus"></i> Register New Student
+  </a>
+</div>
+
+<!-- Privacy Notice Banner -->
+<div style="background:rgba(37, 99, 235, 0.08); border:1px solid rgba(37, 99, 235, 0.2); border-radius:12px; padding:12px 18px; margin-bottom:20px; display:flex; align-items:center; gap:12px;">
+  <div style="width:36px; height:36px; background:#dbeafe; color:#1d4ed8; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;">
+    <i class="fas fa-user-shield"></i>
+  </div>
+  <div>
+    <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark);">Student Privacy Shield Enabled</div>
+    <div style="font-size:0.78rem; color:var(--text-muted); margin-top:1px;">Personal addresses, full contacts, and profile credentials are confidential to each student and restricted from administrative inspection.</div>
+  </div>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card-custom" style="padding:16px 24px; margin-bottom:20px;">
+  <form method="get" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+    <div style="flex:1; min-width:240px; position:relative;">
+      <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search by name, ID, course..." style="padding-left:40px;">
+      <i class="fas fa-search" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+    </div>
+    <button type="submit" class="btn-primary-custom">Search</button>
+    {% if query %}
+      <a href="{% url 'student_list' %}" class="btn-outline-custom">Clear Search</a>
+    {% endif %}
+  </form>
+</div>
+
+{% if students %}
+<div class="table-responsive">
+  <table class="table-custom">
+    <thead>
+      <tr>
+        <th>Student ID</th>
+        <th>Student Name</th>
+        <th>Contact (Protected)</th>
+        <th>Course & Year</th>
+        <th>Room</th>
+        <th>Admitted On</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in students %}
+      <tr>
+        <td style="font-weight:700; color:var(--primary);">{{ s.student_id }}</td>
+        <td>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:36px; height:36px; background:var(--primary-gradient); color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem;">
+              {{ s.name|first|upper }}
+            </div>
+            <div>
+              <div style="font-weight:700; color:var(--text-dark);">{{ s.name }}</div>
+              <div style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:4px;">
+                <i class="fas fa-shield-halved" style="color:var(--primary); font-size:0.7rem;"></i> Profile Protected
+              </div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <span style="font-family:monospace; font-weight:700; color:var(--text-dark); background:var(--bg-main); padding:3px 8px; border-radius:6px; font-size:0.82rem;" title="Masked for Student Privacy">
+            {{ s.contact|slice:":2" }}••••••{{ s.contact|slice:"8:" }}
+          </span>
+        </td>
+        <td>
+          <div style="font-weight:600; color:var(--text-dark);">{{ s.course }}</div>
+          <div style="font-size:0.78rem; color:var(--text-muted);">{{ s.get_year_display }}</div>
+        </td>
+        <td>
+          {% with room=s.get_room %}
+            {% if room %}
+              <span class="badge-custom badge-info"><i class="fas fa-bed"></i> Room {{ room.room_no }}</span>
+            {% else %}
+              <span class="badge-custom badge-secondary"><i class="fas fa-clock"></i> Unassigned</span>
+            {% endif %}
+          {% endwith %}
+        </td>
+        <td>{{ s.date_of_admission|date:"d M Y" }}</td>
+        <td>
+          <div style="display:flex; gap:8px;">
+            <a href="{% url 'student_edit' s.pk %}" class="btn-outline-custom" style="padding:6px 12px; font-size:0.8rem;" title="Edit Student">
+              <i class="fas fa-edit"></i>
+            </a>
+            <a href="{% url 'student_delete' s.pk %}" class="btn-outline-custom" style="border-color:#ef4444; color:#ef4444 !important; padding:6px 12px; font-size:0.8rem;" title="Delete Student">
+              <i class="fas fa-trash"></i>
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card-custom" style="text-align:center; padding:60px 20px;">
+  <i class="fas fa-user-graduate" style="font-size:3rem; color:var(--text-muted); margin-bottom:16px;"></i>
+  <h3 style="font-weight:700; margin-bottom:8px;">{% if query %}No Students Found{% else %}No Registered Students{% endif %}</h3>
+  <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">{% if query %}No students match your query "{{ query }}".{% else %}Click below to register the first hostel student.{% endif %}</p>
+  {% if not query %}
+    <a href="{% url 'student_add' %}" class="btn-primary-custom"><i class="fas fa-user-plus"></i> Register Student</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

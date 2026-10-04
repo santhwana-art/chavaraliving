@@ -1,0 +1,308 @@
+{% extends "base_admin.html" %}
+{% block title %}Leave Requests — Chavara Living{% endblock %}
+{% block page_title %}Leave Requests Management{% endblock %}
+
+{% block extra_head %}
+<style>
+  .leave-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .leave-stat {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 18px;
+    display: flex; align-items: center; gap: 14px;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .leave-stat:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,.08); }
+  .leave-stat-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+  }
+  .leave-stat-icon.orange { background: rgba(245,158,11,.14); color: #f59e0b; }
+  .leave-stat-icon.green  { background: rgba(16,185,129,.14); color: #10b981; }
+  .leave-stat-icon.red    { background: rgba(239,68,68,.14); color: #ef4444; }
+  .leave-stat-icon.blue   { background: rgba(37,99,235,.14); color: #2563eb; }
+
+  .leave-tabs {
+    display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .leave-tab {
+    padding: 8px 18px; border-radius: 10px; font-size: 0.85rem; font-weight: 700;
+    text-decoration: none; color: var(--text-muted);
+    background: var(--card-bg); border: 1px solid var(--border-color);
+    transition: all .2s;
+  }
+  .leave-tab:hover { color: var(--primary); border-color: var(--primary-light); }
+  .leave-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 4px 12px rgba(37,99,235,.25); }
+
+  /* Modal Backdrop & Container */
+  .dash-modal-backdrop {
+    display: none !important;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.58);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .dash-modal-backdrop.open {
+    display: flex !important;
+    animation: fadeInBackdrop 0.2s ease;
+  }
+  .dash-modal {
+    background: var(--card-bg);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+  }
+  .dash-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .dash-modal-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 1.15rem;
+  }
+  .dash-modal-title { font-size: 1.1rem; font-weight: 800; color: var(--text-dark); margin: 0; }
+  .dash-modal-sub   { font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0; }
+  .dash-modal-close {
+    margin-left: auto; width: 34px; height: 34px; border-radius: 8px;
+    background: var(--bg-main); border: 1px solid var(--border-color);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 0.95rem; color: var(--text-muted);
+  }
+  .dash-modal-close:hover { background: #fee2e2; color: #b91c1c; }
+  .dash-modal-body { padding: 20px 24px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+  <div>
+    <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-dark); margin:0 0 4px;">📅 Student Leave Requests</h2>
+    <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">Review, verify parent contacts, and approve or decline student hostel leave applications.</p>
+  </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="leave-stats-grid">
+  <div class="leave-stat">
+    <div class="leave-stat-icon orange"><i class="fas fa-clock"></i></div>
+    <div>
+      <div style="font-size:1.35rem; font-weight:900; color:var(--text-dark);">{{ total_pending }}</div>
+      <div style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">Pending Approval</div>
+    </div>
+  </div>
+  <div class="leave-stat">
+    <div class="leave-stat-icon green"><i class="fas fa-circle-check"></i></div>
+    <div>
+      <div style="font-size:1.35rem; font-weight:900; color:var(--text-dark);">{{ total_approved }}</div>
+      <div style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">Approved Leaves</div>
+    </div>
+  </div>
+  <div class="leave-stat">
+    <div class="leave-stat-icon red"><i class="fas fa-circle-xmark"></i></div>
+    <div>
+      <div style="font-size:1.35rem; font-weight:900; color:var(--text-dark);">{{ total_rejected }}</div>
+      <div style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">Declined Leaves</div>
+    </div>
+  </div>
+  <div class="leave-stat">
+    <div class="leave-stat-icon blue"><i class="fas fa-calendar-days"></i></div>
+    <div>
+      <div style="font-size:1.35rem; font-weight:900; color:var(--text-dark);">{{ total_all }}</div>
+      <div style="font-size:0.78rem; color:var(--text-muted); font-weight:600;">Total Records</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Tabs -->
+<div class="leave-tabs">
+  <a href="?status=all" class="leave-tab {% if status_filter == 'all' or not status_filter %}active{% endif %}">
+    <i class="fas fa-list"></i> All Applications ({{ total_all }})
+  </a>
+  <a href="?status=Pending" class="leave-tab {% if status_filter == 'Pending' %}active{% endif %}">
+    <i class="fas fa-clock"></i> Pending ({{ total_pending }})
+  </a>
+  <a href="?status=Approved" class="leave-tab {% if status_filter == 'Approved' %}active{% endif %}">
+    <i class="fas fa-check-circle"></i> Approved ({{ total_approved }})
+  </a>
+  <a href="?status=Rejected" class="leave-tab {% if status_filter == 'Rejected' %}active{% endif %}">
+    <i class="fas fa-times-circle"></i> Rejected ({{ total_rejected }})
+  </a>
+</div>
+
+<!-- Leaves Table -->
+<div class="card-custom" style="padding:0; overflow:hidden;">
+  {% if leaves %}
+  <div class="table-responsive">
+    <table class="table-custom" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Leave Type</th>
+          <th>Dates &amp; Duration</th>
+          <th>Destination</th>
+          <th>Parent Phone</th>
+          <th>Reason</th>
+          <th>Status</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in leaves %}
+        <tr>
+          <td>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:34px; height:34px; border-radius:50%; background:var(--primary-gradient); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; flex-shrink:0;">
+                {{ l.student.name|first|upper }}
+              </div>
+              <div>
+                <div style="font-weight:700; color:var(--text-dark);">{{ l.student.name }}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">{{ l.student.student_id }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="badge-custom badge-info" style="font-size:0.75rem;">
+              {{ l.leave_type }}
+            </span>
+          </td>
+          <td>
+            <div style="font-weight:700; font-size:0.84rem; color:var(--text-dark);">
+              {{ l.start_date|date:"d M" }} &rarr; {{ l.end_date|date:"d M Y" }}
+            </div>
+            <div style="font-size:0.74rem; color:var(--text-muted); font-weight:600; margin-top:2px;">
+              <i class="fas fa-sun" style="color:#f59e0b;"></i> {{ l.total_days }} day{{ l.total_days|pluralize }}
+            </div>
+          </td>
+          <td>
+            <span style="font-size:0.82rem; font-weight:600; color:var(--text-dark);">
+              <i class="fas fa-location-dot" style="color:#ef4444; font-size:0.75rem; margin-right:4px;"></i>
+              {{ l.destination_city|default:"Not specified" }}
+            </span>
+          </td>
+          <td>
+            <span style="font-family:monospace; font-weight:700; font-size:0.82rem; color:var(--text-dark); background:var(--bg-main); padding:3px 8px; border-radius:6px;">
+              {{ l.parent_contact }}
+            </span>
+          </td>
+          <td style="max-width:200px;">
+            <div style="font-size:0.82rem; color:var(--text-dark); line-height:1.35;" title="{{ l.reason }}">
+              {{ l.reason|truncatechars:65 }}
+            </div>
+          </td>
+          <td>
+            {% if l.status == "Pending" %}
+              <span class="badge-custom badge-warning"><i class="fas fa-clock"></i> Pending</span>
+            {% elif l.status == "Approved" %}
+              <span class="badge-custom badge-success"><i class="fas fa-circle-check"></i> Approved</span>
+            {% elif l.status == "Rejected" %}
+              <span class="badge-custom badge-danger"><i class="fas fa-circle-xmark"></i> Rejected</span>
+            {% else %}
+              <span class="badge-custom badge-secondary">{{ l.status }}</span>
+            {% endif %}
+            {% if l.admin_remarks %}
+              <div style="font-size:0.72rem; color:var(--text-muted); margin-top:3px; max-width:140px;">
+                <em>Note: {{ l.admin_remarks|truncatechars:35 }}</em>
+              </div>
+            {% endif %}
+          </td>
+          <td style="text-align:right;">
+            {% if l.status == "Pending" %}
+              <div style="display:flex; justify-content:flex-end; gap:6px;">
+                <!-- Quick Approve Form -->
+                <form method="post" action="{% url 'admin_leave_action' l.id %}" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="approve">
+                  <button type="submit" class="btn-primary-custom" style="padding:6px 12px; font-size:0.78rem; background:#10b981; border-color:#10b981;" title="Approve Leave">
+                    <i class="fas fa-check"></i> Approve
+                  </button>
+                </form>
+                <!-- Quick Reject Button triggers modal -->
+                <button type="button" onclick="openRejectModal('{{ l.id }}', '{{ l.student.name }}')" class="btn-outline-custom" style="padding:6px 12px; font-size:0.78rem; color:#ef4444; border-color:#fca5a5;" title="Reject Leave">
+                  <i class="fas fa-times"></i> Reject
+                </button>
+              </div>
+            {% else %}
+              <span style="font-size:0.75rem; color:var(--text-muted);">
+                {% if l.reviewed_on %}{{ l.reviewed_on|date:"d M, H:i" }}{% else %}Reviewed{% endif %}
+              </span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center; padding:48px 20px; color:var(--text-muted);">
+    <i class="fas fa-calendar-check" style="font-size:2.8rem; opacity:0.4; margin-bottom:12px; display:block;"></i>
+    <p style="font-size:0.95rem; font-weight:600; margin:0;">No leave applications found for this filter.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal for Rejection Reason -->
+<div class="dash-modal-backdrop" id="rejectModal" onclick="closeRejectOnBackdrop(event)">
+  <div class="dash-modal" style="max-width:480px;">
+    <div class="dash-modal-header">
+      <div class="dash-modal-icon orange" style="background:#fee2e2; color:#ef4444;"><i class="fas fa-calendar-xmark"></i></div>
+      <div>
+        <div class="dash-modal-title">Decline Leave Request</div>
+        <div class="dash-modal-sub" id="rejectStudentSub">Student: </div>
+      </div>
+      <button class="dash-modal-close" onclick="closeRejectModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <form id="rejectForm" method="post" action="">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reject">
+      <div class="dash-modal-body">
+        <label class="form-label" style="font-size:0.85rem; font-weight:700;">Reason for Rejection (Optional note to student)</label>
+        <textarea name="remarks" class="form-control" rows="3" placeholder="e.g. Incomplete details / Examination scheduled / Parent confirmation pending..."></textarea>
+      </div>
+      <div style="padding:16px 24px; border-top:1px solid var(--border-color); display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="btn-outline-custom" onclick="closeRejectModal()">Cancel</button>
+        <button type="submit" class="btn-primary-custom" style="background:#ef4444; border-color:#ef4444;">Confirm Decline</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openRejectModal(leaveId, studentName) {
+  const form = document.getElementById('rejectForm');
+  form.action = '/admin-panel/leaves/' + leaveId + '/action/';
+  document.getElementById('rejectStudentSub').textContent = 'Student: ' + studentName;
+  const modal = document.getElementById('rejectModal');
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeRejectModal() {
+  document.getElementById('rejectModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeRejectOnBackdrop(e) {
+  if (e.target === document.getElementById('rejectModal')) {
+    closeRejectModal();
+  }
+}
+</script>
+{% endblock %}

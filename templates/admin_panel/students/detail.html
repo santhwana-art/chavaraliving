@@ -1,0 +1,181 @@
+{% extends "base_admin.html" %}
+{% block title %}{{ student.name }} — Profile{% endblock %}
+{% block page_title %}Student Profile{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+  <div>
+    <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-dark); margin-bottom:4px;">{{ student.name }}</h2>
+    <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">
+      <strong style="color:var(--primary);">{{ student.student_id }}</strong> &bull; {{ student.course }} ({{ student.get_year_display }})
+    </p>
+  </div>
+  <div style="display:flex; gap:12px;">
+    <a href="{% url 'student_edit' student.pk %}" class="btn-primary-custom">
+      <i class="fas fa-edit"></i> Edit Profile
+    </a>
+    <a href="{% url 'student_list' %}" class="btn-outline-custom">
+      <i class="fas fa-arrow-left"></i> Back to List
+    </a>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns: 320px 1fr; gap:24px;">
+  <!-- Left Column: Student Bio -->
+  <div class="card-custom">
+    <div style="text-align:center; padding-bottom:20px; border-bottom:1px solid var(--border-color); margin-bottom:20px;">
+      <div style="width:72px; height:72px; background:var(--primary-gradient); color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.8rem; font-weight:800; margin:0 auto 12px; box-shadow:var(--shadow-md);">
+        {{ student.name|first|upper }}
+      </div>
+      <h3 style="font-size:1.2rem; font-weight:800; color:var(--text-dark); margin:0;">{{ student.name }}</h3>
+      <div style="font-size:0.85rem; font-weight:700; color:var(--primary); margin-top:2px;">{{ student.student_id }}</div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.85rem;">Contact Phone</span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ student.contact }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.85rem;">Email Address</span>
+        <span style="font-weight:700; color:var(--text-dark); font-size:0.85rem;">{{ student.email }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.85rem;">Course</span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ student.course }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.85rem;">Academic Year</span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ student.get_year_display }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.85rem;">Admitted On</span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ student.date_of_admission|date:"d M Y" }}</span>
+      </div>
+      {% if student.address %}
+      <div style="padding:8px 0;">
+        <div style="color:var(--text-muted); font-size:0.85rem; font-weight:600; margin-bottom:4px;">Address</div>
+        <div style="font-size:0.88rem; color:var(--text-dark); font-weight:500;">{{ student.address }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Right Column: Room, Fees & Complaints -->
+  <div style="display:flex; flex-direction:column; gap:24px;">
+    <!-- Room Info -->
+    <div class="card-custom">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border-color);">
+        <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-dark); margin:0;">
+          <i class="fas fa-bed" style="color:var(--primary); margin-right:8px;"></i> Active Room Assignment
+        </h3>
+      </div>
+      {% if booking %}
+      <div class="card-inner-box" style="display:flex; align-items:center; justify-content:space-between; border-radius:12px; padding:16px;">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div style="font-size:2.2rem; font-weight:800; color:var(--primary);">{{ booking.room.room_no }}</div>
+          <div>
+            <div style="font-weight:700; color:var(--text-dark);">{{ booking.room.room_type }}</div>
+            <div style="font-size:0.82rem; color:var(--text-muted);">Floor {{ booking.room.floor }} &bull; {{ booking.room.block }}</div>
+          </div>
+        </div>
+        <span class="badge-custom badge-success"><i class="fas fa-check-circle"></i> {{ booking.status }}</span>
+      </div>
+      {% else %}
+      <div style="text-align:center; padding:24px 0; color:var(--text-muted);">
+        <p style="font-size:0.9rem; margin-bottom:12px;">No room currently allocated to this student.</p>
+        <a href="{% url 'allocate_room' %}" class="btn-outline-custom"><i class="fas fa-plus"></i> Allocate Room</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Fee History -->
+    <div class="card-custom">
+      <div style="margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border-color);">
+        <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-dark); margin:0;">
+          <i class="fas fa-rupee-sign" style="color:var(--primary); margin-right:8px;"></i> Fee Payment History
+        </h3>
+      </div>
+      {% if fees %}
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Due Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in fees %}
+            <tr>
+              <td style="font-weight:700; color:var(--primary);">{{ f.payment_id }}</td>
+              <td>{{ f.fee_type }}</td>
+              <td style="font-weight:700;">₹{{ f.amount }}</td>
+              <td>{{ f.due_date|date:"d M Y" }}</td>
+              <td>
+                {% if f.status == 'Paid' %}
+                  <span class="badge-custom badge-success">Paid</span>
+                {% elif f.status == 'Pending' %}
+                  <span class="badge-custom badge-warning">Pending</span>
+                {% elif f.status == 'Overdue' %}
+                  <span class="badge-custom badge-danger">Overdue</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p style="color:var(--text-muted); font-size:0.88rem; text-align:center; padding:16px 0;">No fee records recorded for this student.</p>
+      {% endif %}
+    </div>
+
+    <!-- Complaints -->
+    <div class="card-custom">
+      <div style="margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border-color);">
+        <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-dark); margin:0;">
+          <i class="fas fa-exclamation-circle" style="color:#c2410c; margin-right:8px;"></i> Submitted Complaints
+        </h3>
+      </div>
+      {% if complaints %}
+      <div class="table-responsive">
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Submitted</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in complaints %}
+            <tr>
+              <td style="font-weight:700; color:var(--primary);">{{ c.complaint_id }}</td>
+              <td style="font-weight:600;">{{ c.title }}</td>
+              <td>{{ c.submission_date|date:"d M Y" }}</td>
+              <td>
+                {% if c.status == 'Pending' %}
+                  <span class="badge-custom badge-warning">Pending</span>
+                {% elif c.status == 'In Progress' %}
+                  <span class="badge-custom badge-info">In Progress</span>
+                {% elif c.status == 'Resolved' %}
+                  <span class="badge-custom badge-success">Resolved</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p style="color:var(--text-muted); font-size:0.88rem; text-align:center; padding:16px 0;">No complaints submitted by this student.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

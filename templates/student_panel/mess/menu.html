@@ -1,0 +1,372 @@
+{% extends "base_student.html" %}
+{% block title %}Mess Menu — Chavara Living{% endblock %}
+{% block page_title %}Mess & Dining{% endblock %}
+
+{% block extra_head %}
+<style>
+  .mess-hero {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7c948 50%, #e8482f 100%);
+    border-radius: 20px;
+    padding: 28px 32px;
+    color: #fff;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .mess-hero::before {
+    content: '🍛';
+    position: absolute;
+    right: 30px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 4rem;
+    opacity: .3;
+  }
+  .mess-hero h2 { font-size: 1.5rem; font-weight: 900; margin: 0 0 4px; }
+  .mess-hero p  { font-size: 0.88rem; opacity: .9; margin: 0; }
+
+  .sub-status-card {
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    display: flex; align-items: center; gap: 16px;
+    flex-wrap: wrap;
+  }
+  .sub-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+  .sub-icon.active { background: rgba(22,163,74,.14); color: #16a34a; }
+  .sub-icon.none   { background: rgba(234,88,12,.14); color: #ea580c; }
+
+  /* Today's menu highlight */
+  .today-highlight {
+    background: linear-gradient(135deg, rgba(37,99,235,.06), rgba(124,58,237,.06));
+    border: 2px solid var(--primary);
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+  .today-highlight h3 {
+    font-size: 1.15rem; font-weight: 800;
+    color: var(--text-dark);
+    margin: 0 0 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .meal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .meal-card {
+    border-radius: 14px;
+    padding: 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .meal-card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,0,0,.1); }
+  .meal-card.active-meal { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.18); }
+  .meal-label {
+    font-weight: 800; font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .meal-label.breakfast { color: #ea580c; }
+  .meal-label.lunch    { color: #2563eb; }
+  .meal-label.dinner   { color: #7c3aed; }
+  .meal-time {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .meal-items {
+    list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .meal-items li {
+    font-size: 0.82rem;
+    color: var(--text-dark);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .meal-items li::before {
+    content: '•';
+    color: var(--primary);
+    font-weight: 900;
+  }
+
+  /* Weekly menu */
+  .week-tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 4px;
+    background: var(--bg-main);
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 20px;
+  }
+  .week-tab {
+    flex: 1; min-width: 90px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 700; font-size: 0.82rem;
+    cursor: pointer;
+    text-align: center;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .week-tab:hover { color: var(--primary); }
+  .week-tab.active {
+    background: var(--card-bg);
+    color: var(--primary);
+    box-shadow: var(--shadow-sm);
+  }
+  .week-tab.today-tab {
+    position: relative;
+  }
+  .week-tab.today-tab::after {
+    content: '';
+    position: absolute;
+    bottom: 4px; left: 50%; transform: translateX(-50%);
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #16a34a;
+  }
+
+  .day-content { display: none; }
+  .day-content.active { display: block; }
+
+  /* Pricing cards */
+  .plan-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+    margin-top: 20px;
+  }
+  .plan-card {
+    border-radius: 18px;
+    padding: 24px;
+    text-align: center;
+    border: 2px solid var(--border-color);
+    background: var(--card-bg);
+    transition: all .25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .plan-card:hover { transform: translateY(-4px); box-shadow: 0 8px 28px rgba(0,0,0,.12); }
+  .plan-card.popular::before {
+    content: '⭐ POPULAR';
+    position: absolute;
+    top: 12px; right: -28px;
+    background: #f59e0b;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 4px 34px;
+    transform: rotate(45deg);
+    letter-spacing: .06em;
+  }
+  .plan-price { font-size: 2rem; font-weight: 900; color: var(--text-dark); margin: 8px 0; }
+  .plan-price span { font-size: 0.88rem; font-weight: 600; color: var(--text-muted); }
+
+  /* Past subscriptions */
+  .past-sub-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .past-sub-item:last-child { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Banner -->
+<div class="mess-hero">
+  <h2>🍽️ South Indian Mess</h2>
+  <p>Authentic home-style cooking • Freshly prepared meals • 3 times a day</p>
+</div>
+
+<!-- Subscription Status -->
+{% if active_sub %}
+<div class="sub-status-card">
+  <div class="sub-icon active"><i class="fas fa-check-circle"></i></div>
+  <div style="flex:1;">
+    <div style="font-weight:800; color:var(--text-dark); font-size:1rem;">Active Subscription</div>
+    <div style="font-size:0.84rem; color:var(--text-muted); margin-top:2px;">
+      {{ active_sub.get_plan_display }} &bull; Valid until <strong>{{ active_sub.end_date|date:"d M Y" }}</strong>
+      &bull; <span style="color:#16a34a; font-weight:700;">{{ active_sub.days_remaining }} days remaining</span>
+    </div>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <span class="badge-custom badge-success" style="font-size:0.78rem; padding:6px 14px;"><i class="fas fa-utensils"></i> ₹{{ active_sub.amount }} Paid</span>
+    <a href="{% url 'student_mess_cancel' %}" class="btn-outline-custom" style="font-size:0.78rem; padding:6px 14px; color:#b91c1c; border-color:#fca5a5;">
+      <i class="fas fa-times"></i> Cancel
+    </a>
+  </div>
+</div>
+{% else %}
+<div class="sub-status-card" style="border-color:#fbbf24;">
+  <div class="sub-icon none"><i class="fas fa-utensils"></i></div>
+  <div style="flex:1;">
+    <div style="font-weight:800; color:var(--text-dark); font-size:1rem;">No Active Subscription</div>
+    <div style="font-size:0.84rem; color:var(--text-muted); margin-top:2px;">Subscribe to a mess plan to enjoy freshly prepared South Indian meals daily.</div>
+  </div>
+  <a href="{% url 'student_mess_subscribe' %}" class="btn-primary-custom" style="white-space:nowrap;">
+    <i class="fas fa-plus-circle"></i> Subscribe Now
+  </a>
+</div>
+{% endif %}
+
+<!-- Today's Menu -->
+<div class="today-highlight">
+  <h3>
+    <span style="font-size:1.5rem;">📅</span> Today's Menu — {{ today_name }}
+    {% if current_meal %}
+      <span class="badge-custom badge-success" style="margin-left:auto; font-size:.72rem;"><i class="fas fa-clock"></i> {{ current_meal|title }} time now</span>
+    {% endif %}
+  </h3>
+  <div class="meal-grid">
+    {% for meal_key, meal in today_menu.items %}
+    <div class="meal-card {% if current_meal == meal_key %}active-meal{% endif %}">
+      <div class="meal-label {{ meal_key }}">
+        {% if meal_key == "breakfast" %}<i class="fas fa-sun"></i> Breakfast
+        {% elif meal_key == "lunch" %}<i class="fas fa-cloud-sun"></i> Lunch
+        {% else %}<i class="fas fa-moon"></i> Dinner
+        {% endif %}
+        {% if current_meal == meal_key %}<span style="font-size:.65rem; background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:8px; margin-left:auto;">NOW</span>{% endif %}
+      </div>
+      <div class="meal-time"><i class="fas fa-clock"></i> {{ meal.time }}</div>
+      <ul class="meal-items">
+        {% for item in meal.items %}
+          <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Full Weekly Menu -->
+<div class="card-custom" style="margin-bottom:28px;">
+  <h3 style="font-size:1.1rem; font-weight:800; color:var(--text-dark); margin:0 0 16px; display:flex; align-items:center; gap:8px;">
+    <i class="fas fa-calendar-week" style="color:var(--primary);"></i> Full Weekly Menu
+  </h3>
+
+  <div class="week-tabs" id="weekTabs">
+    {% for day, meals in menu.items %}
+    <button class="week-tab {% if day == today_name %}today-tab active{% endif %}"
+            onclick="showDay('{{ day }}', this)" data-day="{{ day }}">
+      {{ day|truncatechars:3 }}
+      {% if day == today_name %}<br><span style="font-size:.6rem; color:#16a34a;">Today</span>{% endif %}
+    </button>
+    {% endfor %}
+  </div>
+
+  {% for day, meals in menu.items %}
+  <div class="day-content {% if day == today_name %}active{% endif %}" id="day-{{ day }}">
+    <div style="font-weight:800; font-size:0.95rem; color:var(--text-dark); margin-bottom:14px;">
+      <i class="fas fa-utensils" style="color:var(--primary); margin-right:6px;"></i> {{ day }}'s Complete Menu
+    </div>
+    <div class="meal-grid">
+      {% for meal_key, meal in meals.items %}
+      <div class="meal-card">
+        <div class="meal-label {{ meal_key }}">
+          {% if meal_key == "breakfast" %}<i class="fas fa-sun"></i> Breakfast
+          {% elif meal_key == "lunch" %}<i class="fas fa-cloud-sun"></i> Lunch
+          {% else %}<i class="fas fa-moon"></i> Dinner
+          {% endif %}
+        </div>
+        <div class="meal-time"><i class="fas fa-clock"></i> {{ meal.time }}</div>
+        <ul class="meal-items">
+          {% for item in meal.items %}
+            <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pricing Plans -->
+<div class="card-custom" style="margin-bottom:28px;">
+  <h3 style="font-size:1.1rem; font-weight:800; color:var(--text-dark); margin:0 0 6px; display:flex; align-items:center; gap:8px;">
+    <i class="fas fa-tags" style="color:#f59e0b;"></i> Mess Plans & Pricing
+  </h3>
+  <p style="color:var(--text-muted); font-size:0.84rem; margin:0;">Choose a plan that works for you. Cancel anytime.</p>
+
+  <div class="plan-grid">
+    <div class="plan-card popular">
+      <div style="font-weight:800; font-size:0.88rem; color:var(--primary);">30-DAY PLAN</div>
+      <div class="plan-price">₹3,000 <span>/ 30 days</span></div>
+      <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:14px;">₹100 per day • Best value</div>
+      <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:14px; text-align:left;">
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;"><i class="fas fa-check" style="color:#16a34a; font-size:.7rem;"></i> All 3 meals included</div>
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;"><i class="fas fa-check" style="color:#16a34a; font-size:.7rem;"></i> Unlimited servings</div>
+        <div style="display:flex; align-items:center; gap:6px;"><i class="fas fa-check" style="color:#16a34a; font-size:.7rem;"></i> Weekend special dishes</div>
+      </div>
+      {% if not active_sub %}
+        <a href="{% url 'student_mess_subscribe' %}" class="btn-primary-custom" style="width:100%;">Subscribe Now</a>
+      {% endif %}
+    </div>
+
+    <div class="plan-card">
+      <div style="font-weight:800; font-size:0.88rem; color:#7c3aed;">15-DAY PLAN</div>
+      <div class="plan-price">₹1,800 <span>/ 15 days</span></div>
+      <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:14px;">₹120 per day • Flexible</div>
+      <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:14px; text-align:left;">
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;"><i class="fas fa-check" style="color:#16a34a; font-size:.7rem;"></i> All 3 meals included</div>
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;"><i class="fas fa-check" style="color:#16a34a; font-size:.7rem;"></i> Unlimited servings</div>
+        <div style="display:flex; align-items:center; gap:6px;"><i class="fas fa-check" style="color:#16a34a; font-size:.7rem;"></i> Trial-friendly</div>
+      </div>
+      {% if not active_sub %}
+        <a href="{% url 'student_mess_subscribe' %}" class="btn-primary-custom" style="width:100%; background:#7c3aed;">Subscribe Now</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Past Subscriptions -->
+{% if past_subs %}
+<div class="card-custom">
+  <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-dark); margin:0 0 14px; display:flex; align-items:center; gap:8px;">
+    <i class="fas fa-history" style="color:var(--text-muted);"></i> Past Subscriptions
+  </h3>
+  {% for sub in past_subs %}
+  <div class="past-sub-item">
+    <div style="font-weight:700; font-size:0.86rem; color:var(--text-dark); min-width:80px;">{{ sub.subscription_id }}</div>
+    <div style="flex:1;">
+      <span style="font-size:0.82rem; color:var(--text-muted);">{{ sub.get_plan_display }} &bull; {{ sub.start_date|date:"d M" }} → {{ sub.end_date|date:"d M Y" }}</span>
+    </div>
+    <div style="font-weight:700; font-size:0.82rem;">₹{{ sub.amount }}</div>
+    {% if sub.status == "Expired" %}
+      <span class="badge-custom badge-secondary" style="font-size:.7rem;"><i class="fas fa-clock"></i> Expired</span>
+    {% elif sub.status == "Cancelled" %}
+      <span class="badge-custom badge-danger" style="font-size:.7rem;"><i class="fas fa-times"></i> Cancelled</span>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<script>
+function showDay(day, btn) {
+  document.querySelectorAll('.day-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.week-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('day-' + day).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+{% endblock %}

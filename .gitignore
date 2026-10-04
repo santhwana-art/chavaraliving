@@ -1,0 +1,48 @@
+# -- Python ----------------------------------------------
+__pycache__/
+*.py[cod]
+*.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# -- Virtual Environments ---------------------------------
+.venv/
+venv/
+env/
+ENV/
+
+# -- Django -----------------------------------------------
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+local_settings.py
+
+# -- Environment / Secrets --------------------------------
+.env
+.env.local
+.env.production
+*.pem
+
+# -- IDEs & Editors ---------------------------------------
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# -- OS Files ---------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# -- Pyrefly / Pyright ------------------------------------
+.pyrefly.json
+.pyreignore
+pyrightconfig.json

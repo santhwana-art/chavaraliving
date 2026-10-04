@@ -1,0 +1,70 @@
+{% extends "base_admin.html" %}
+{% block title %}Room Allocations{% endblock %}
+{% block page_title %}Room Allocations{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+  <div>
+    <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-dark); margin-bottom:4px;">Room Allocation History</h2>
+    <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">View all active and past student room allocations.</p>
+  </div>
+  <a href="{% url 'allocate_room' %}" class="btn-primary-custom">
+    <i class="fas fa-plus"></i> New Room Allocation
+  </a>
+</div>
+
+{% if bookings %}
+<div class="table-responsive">
+  <table class="table-custom">
+    <thead>
+      <tr>
+        <th>Booking ID</th>
+        <th>Student Name</th>
+        <th>Allocated Room</th>
+        <th>Arrival Date</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in bookings %}
+      <tr>
+        <td style="font-weight:700; color:var(--primary);">{{ b.booking_id }}</td>
+        <td>
+          <div style="font-weight:700; color:var(--text-dark);">{{ b.student.name }}</div>
+          <div style="font-size:0.78rem; color:var(--text-muted);">{{ b.student.student_id }}</div>
+        </td>
+        <td style="font-weight:700; color:var(--text-dark);">
+          <span>Room {{ b.room.room_no }}</span>
+          <span class="badge-custom badge-info" style="margin-left:6px; font-size:0.75rem;"><i class="fas fa-bed"></i> Bed #{{ b.bed_number }}</span>
+          <div style="font-size:0.78rem; font-weight:500; color:var(--text-muted); margin-top:2px;">{{ b.room.room_type }} &bull; Floor {{ b.room.floor }}</div>
+        </td>
+        <td>{{ b.arrival_date|date:"d M Y" }}</td>
+        <td>
+          {% if b.status == 'Active' %}
+            <span class="badge-custom badge-success"><i class="fas fa-check-circle"></i> Active</span>
+          {% else %}
+            <span class="badge-custom badge-secondary"><i class="fas fa-history"></i> {{ b.status }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if b.status == "Active" %}
+          <a href="{% url 'vacate_room' b.pk %}" class="btn-outline-custom" style="padding:6px 12px; font-size:0.8rem; border-color:#b45309; color:#b45309 !important;">
+            <i class="fas fa-sign-out-alt"></i> Vacate Room
+          </a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card-custom" style="text-align:center; padding:60px 20px;">
+  <i class="fas fa-bed" style="font-size:3rem; color:var(--text-muted); margin-bottom:16px;"></i>
+  <h3 style="font-weight:700; margin-bottom:8px;">No Allocations Found</h3>
+  <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">Allocate rooms to registered students to track history here.</p>
+  <a href="{% url 'allocate_room' %}" class="btn-primary-custom"><i class="fas fa-plus"></i> Allocate First Room</a>
+</div>
+{% endif %}
+{% endblock %}

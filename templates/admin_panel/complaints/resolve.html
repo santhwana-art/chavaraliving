@@ -1,0 +1,85 @@
+{% extends "base_admin.html" %}
+{% block title %}Update Complaint{% endblock %}
+{% block page_title %}Update Complaint{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-dark); margin-bottom:4px;">Resolve Hostel Complaint</h2>
+  <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">Review complaint info and post management remarks or update status.</p>
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:24px;">
+  <!-- Details Card -->
+  <div class="card-custom">
+    <div style="display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--border-color); padding-bottom:14px; margin-bottom:20px;">
+      <div style="width:40px; height:40px; background:#ffedd5; color:#c2410c; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+        <i class="fas fa-exclamation-circle"></i>
+      </div>
+      <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-dark); margin:0;">Complaint Details</h3>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.88rem;">Complaint ID</span>
+        <span style="font-weight:700; color:var(--primary);">{{ complaint.complaint_id }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.88rem;">Student</span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ complaint.student.name }} ({{ complaint.student.student_id }})</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.88rem;">Submitted Date</span>
+        <span style="font-weight:600; color:var(--text-dark);">{{ complaint.submission_date|date:"d M Y" }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.88rem;">Current Status</span>
+        {% if complaint.status == 'Pending' %}
+          <span class="badge-custom badge-warning"><i class="fas fa-clock"></i> Pending</span>
+        {% elif complaint.status == 'In Progress' %}
+          <span class="badge-custom badge-info"><i class="fas fa-spinner fa-spin"></i> In Progress</span>
+        {% elif complaint.status == 'Resolved' %}
+          <span class="badge-custom badge-success"><i class="fas fa-check-circle"></i> Resolved</span>
+        {% endif %}
+      </div>
+      <div style="padding:10px 0;">
+        <div style="color:var(--text-muted); font-size:0.85rem; font-weight:600; margin-bottom:4px;">Title</div>
+        <div style="font-weight:700; color:var(--text-dark); margin-bottom:10px;">{{ complaint.title }}</div>
+        <div style="color:var(--text-muted); font-size:0.85rem; font-weight:600; margin-bottom:4px;">Description</div>
+        <div class="card-inner-box" style="border-radius:10px; padding:12px; font-size:0.88rem; white-space:pre-wrap;">{{ complaint.description }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resolution Form Card -->
+  <div class="card-custom">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:14px; margin-bottom:20px;">
+      <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-dark); margin:0;"><i class="fas fa-edit" style="color:var(--primary); margin-right:8px;"></i> Update Action</h3>
+      <a href="{% url 'complaint_list' %}" class="btn-outline-custom" style="padding:6px 14px; font-size:0.8rem;">
+        <i class="fas fa-arrow-left"></i> Back
+      </a>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div style="margin-bottom:20px;">
+        <label class="form-label">Status</label>
+        {{ form.status }}
+        {% if form.status.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.status.errors }}</div>{% endif %}
+      </div>
+
+      <div style="margin-bottom:28px;">
+        <label class="form-label">Admin Notes / Resolution Remarks</label>
+        {{ form.admin_notes }}
+        {% if form.admin_notes.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.admin_notes.errors }}</div>{% endif %}
+      </div>
+
+      <div style="display:flex; gap:12px; justify-content:flex-end;">
+        <a href="{% url 'complaint_list' %}" class="btn-outline-custom">Cancel</a>
+        <button type="submit" class="btn-primary-custom">
+          <i class="fas fa-save"></i> Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,323 @@
+{% extends "base_admin.html" %}
+{% block title %}Mess Management — Chavara Living{% endblock %}
+{% block page_title %}Mess Management{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  .mess-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 18px;
+    margin-bottom: 28px;
+  }
+  .mess-stat {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex; align-items: center; gap: 14px;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .mess-stat:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,.1); }
+  .mess-stat-icon {
+    width: 46px; height: 46px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+  }
+  .mess-stat-icon.green  { background: rgba(22,163,74,.14); color: #16a34a; }
+  .mess-stat-icon.orange { background: rgba(234,88,12,.14); color: #ea580c; }
+  .mess-stat-icon.red    { background: rgba(185,28,28,.14); color: #b91c1c; }
+  .mess-stat-icon.blue   { background: rgba(37,99,235,.14); color: #2563eb; }
+
+  .mess-stat-val { font-size: 1.4rem; font-weight: 900; color: var(--text-dark); }
+  .mess-stat-lbl { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
+
+  /* Week menu tabs */
+  .admin-menu-tabs {
+    display: flex; gap: 4px; overflow-x: auto;
+    padding: 4px; background: var(--bg-main);
+    border-radius: 12px; border: 1px solid var(--border-color);
+    margin-bottom: 16px;
+  }
+  .admin-menu-tab {
+    flex: 1; min-width: 70px;
+    padding: 8px 10px; border: none; border-radius: 8px;
+    background: transparent; color: var(--text-muted);
+    font-weight: 700; font-size: 0.78rem; cursor: pointer;
+    text-align: center; transition: all .2s; white-space: nowrap;
+  }
+  .admin-menu-tab:hover { color: var(--primary); }
+  .admin-menu-tab.active { background: var(--card-bg); color: var(--primary); box-shadow: var(--shadow-sm); }
+  .admin-day-panel { display: none; }
+  .admin-day-panel.active { display: block; }
+
+  .menu-item-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 0; font-size: 0.82rem; color: var(--text-dark);
+  }
+  .menu-item-row::before { content: '•'; color: var(--primary); font-weight: 900; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-dark); margin:0 0 4px;">🍛 South Indian Mess — Administration</h2>
+  <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">Track student mess subscriptions, revenue, and weekly menu.</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="mess-stats-grid">
+  <div class="mess-stat">
+    <div class="mess-stat-icon green"><i class="fas fa-utensils"></i></div>
+    <div>
+      <div class="mess-stat-val">{{ total_active }}</div>
+      <div class="mess-stat-lbl">Active Subscribers</div>
+    </div>
+  </div>
+  <div class="mess-stat">
+    <div class="mess-stat-icon orange"><i class="fas fa-clock-rotate-left"></i></div>
+    <div>
+      <div class="mess-stat-val">{{ total_expired }}</div>
+      <div class="mess-stat-lbl">Expired Plans</div>
+    </div>
+  </div>
+  <div class="mess-stat">
+    <div class="mess-stat-icon red"><i class="fas fa-ban"></i></div>
+    <div>
+      <div class="mess-stat-val">{{ total_cancelled }}</div>
+      <div class="mess-stat-lbl">Cancelled</div>
+    </div>
+  </div>
+  <div class="mess-stat">
+    <div class="mess-stat-icon blue"><i class="fas fa-rupee-sign"></i></div>
+    <div>
+      <div class="mess-stat-val">₹{{ total_revenue }}</div>
+      <div class="mess-stat-lbl">Total Revenue</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:24px; margin-bottom:28px;">
+  <div class="card-custom">
+    <h3 style="font-size:1rem; font-weight:700; color:var(--text-dark); margin:0 0 16px;">
+      <i class="fas fa-chart-pie" style="color:var(--primary); margin-right:6px;"></i> Plan Distribution
+    </h3>
+    <div style="height:220px; position:relative;">
+      <canvas id="messPlanChart" data-p30="{{ plan_30 }}" data-p15="{{ plan_15 }}"></canvas>
+    </div>
+  </div>
+
+  <div class="card-custom">
+    <h3 style="font-size:1rem; font-weight:700; color:var(--text-dark); margin:0 0 16px;">
+      <i class="fas fa-chart-bar" style="color:var(--primary); margin-right:6px;"></i> Subscription Status
+    </h3>
+    <div style="height:220px; position:relative;">
+      <canvas id="messStatusChart"
+              data-active="{{ total_active }}"
+              data-expired="{{ total_expired }}"
+              data-cancelled="{{ total_cancelled }}"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Active Subscribers Table -->
+<div class="card-custom" style="margin-bottom:28px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border-color);">
+    <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-dark); margin:0;">
+      <i class="fas fa-users" style="color:#16a34a; margin-right:8px;"></i> Active Subscribers ({{ total_active }})
+    </h3>
+  </div>
+  {% if active_subs %}
+    <div class="table-responsive-custom">
+      <table class="table-custom">
+        <thead>
+          <tr>
+            <th>Sub ID</th>
+            <th>Student</th>
+            <th>Plan</th>
+            <th>Amount</th>
+            <th>Period</th>
+            <th>Days Left</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sub in active_subs %}
+          <tr>
+            <td style="font-family:monospace; font-weight:700; font-size:0.82rem;">{{ sub.subscription_id }}</td>
+            <td>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:30px; height:30px; background:var(--primary-gradient); color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75rem;">{{ sub.student.name|first|upper }}</div>
+                <div>
+                  <div style="font-weight:700; font-size:0.86rem;">{{ sub.student.name }}</div>
+                  <div style="font-size:0.72rem; color:var(--text-muted);">{{ sub.student.student_id }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              {% if sub.plan == "30_days" %}
+                <span class="badge-custom badge-success" style="font-size:.72rem;">30 Days</span>
+              {% else %}
+                <span class="badge-custom badge-info" style="font-size:.72rem;">15 Days</span>
+              {% endif %}
+            </td>
+            <td style="font-weight:700;">₹{{ sub.amount }}</td>
+            <td style="font-size:0.82rem; color:var(--text-muted);">{{ sub.start_date|date:"d M" }} → {{ sub.end_date|date:"d M Y" }}</td>
+            <td>
+              {% if sub.days_remaining > 7 %}
+                <span class="badge-custom badge-success">{{ sub.days_remaining }} days</span>
+              {% elif sub.days_remaining > 0 %}
+                <span class="badge-custom badge-warning">{{ sub.days_remaining }} days</span>
+              {% else %}
+                <span class="badge-custom badge-danger">Expiring today</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align:center; padding:40px 20px; color:var(--text-muted);">
+      <i class="fas fa-utensils" style="font-size:2.5rem; opacity:.35; display:block; margin-bottom:10px;"></i>
+      <p style="font-size:0.88rem; margin:0;">No active mess subscribers at the moment.</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Weekly Menu Reference -->
+<div class="card-custom">
+  <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-dark); margin:0 0 14px;">
+    <i class="fas fa-calendar-week" style="color:var(--primary); margin-right:6px;"></i> Weekly Menu Reference
+  </h3>
+  <div class="admin-menu-tabs" id="adminMenuTabs">
+    {% for day, meals in menu.items %}
+    <button class="admin-menu-tab {% if forloop.first %}active{% endif %}" onclick="showAdminDay('{{ day }}', this)">{{ day|truncatechars:3 }}</button>
+    {% endfor %}
+  </div>
+  {% for day, meals in menu.items %}
+  <div class="admin-day-panel {% if forloop.first %}active{% endif %}" id="admin-day-{{ day }}">
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px;">
+      {% for meal_key, meal in meals.items %}
+      <div style="padding:12px; border-radius:12px; border:1px solid var(--border-color);">
+        <div style="font-weight:800; font-size:0.78rem; text-transform:uppercase; margin-bottom:6px;
+          {% if meal_key == 'breakfast' %}color:#ea580c;{% elif meal_key == 'lunch' %}color:#2563eb;{% else %}color:#7c3aed;{% endif %}">
+          {% if meal_key == "breakfast" %}☀️ Breakfast{% elif meal_key == "lunch" %}🌤️ Lunch{% else %}🌙 Dinner{% endif %}
+        </div>
+        <div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:8px;">{{ meal.time }}</div>
+        {% for item in meal.items %}
+          <div class="menu-item-row">{{ item }}</div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showAdminDay(day, btn) {
+  document.querySelectorAll('.admin-day-panel').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.admin-menu-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('admin-day-' + day).classList.add('active');
+  btn.classList.add('active');
+}
+
+let messPlanChartInst = null;
+let messStatusChartInst = null;
+
+function renderMessCharts() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const textColor = isDark ? '#f8fafc' : '#0f172a';
+  const mutedColor = isDark ? '#94a3b8' : '#64748b';
+  const gridColor = isDark ? '#334155' : '#e2e8f0';
+
+  var planCanvas = document.getElementById('messPlanChart');
+  if (planCanvas) {
+    if (messPlanChartInst) messPlanChartInst.destroy();
+    var p30 = parseInt(planCanvas.dataset.p30 || '0', 10);
+    var p15 = parseInt(planCanvas.dataset.p15 || '0', 10);
+    messPlanChartInst = new Chart(planCanvas.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['30-Day Plan', '15-Day Plan'],
+        datasets: [{
+          data: [p30, p15],
+          backgroundColor: ['#2563eb', '#7c3aed'],
+          borderWidth: isDark ? 2 : 1,
+          borderColor: isDark ? '#1e293b' : '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: textColor,
+              padding: 14,
+              font: { size: 12, weight: 600 }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  var statusCanvas = document.getElementById('messStatusChart');
+  if (statusCanvas) {
+    if (messStatusChartInst) messStatusChartInst.destroy();
+    var ac = parseInt(statusCanvas.dataset.active || '0', 10);
+    var ex = parseInt(statusCanvas.dataset.expired || '0', 10);
+    var cn = parseInt(statusCanvas.dataset.cancelled || '0', 10);
+    messStatusChartInst = new Chart(statusCanvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['Active', 'Expired', 'Cancelled'],
+        datasets: [{
+          label: 'Subscriptions',
+          data: [ac, ex, cn],
+          backgroundColor: ['#16a34a', '#f59e0b', '#ef4444'],
+          borderRadius: 8,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { color: mutedColor, stepSize: 1 },
+            grid: { color: gridColor }
+          },
+          x: {
+            ticks: { color: mutedColor, font: { weight: 600 } },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', renderMessCharts);
+
+const messThemeObs = new MutationObserver(function(mutations) {
+  mutations.forEach(function(m) {
+    if (m.attributeName === 'data-theme') {
+      renderMessCharts();
+    }
+  });
+});
+messThemeObs.observe(document.documentElement, { attributes: true });
+</script>
+{% endblock %}

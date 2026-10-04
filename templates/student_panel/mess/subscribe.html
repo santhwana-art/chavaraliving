@@ -1,0 +1,110 @@
+{% extends "base_student.html" %}
+{% block title %}Subscribe to Mess — Chavara Living{% endblock %}
+{% block page_title %}Mess Subscription{% endblock %}
+
+{% block extra_head %}
+<style>
+  .subscribe-card {
+    max-width: 580px;
+    margin: 0 auto;
+  }
+  .plan-radio-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .plan-radio-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all .22s;
+    background: var(--card-bg);
+    text-align: center;
+  }
+  .plan-radio-label:hover { border-color: var(--primary); }
+  .plan-radio-label input[type="radio"] { display: none; }
+  .plan-radio-label input[type="radio"]:checked + .plan-radio-content {
+    opacity: 1;
+  }
+  .plan-radio-label:has(input:checked) {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+    background: linear-gradient(135deg, rgba(37,99,235,.04), rgba(124,58,237,.04));
+  }
+  .plan-radio-content { opacity: .7; transition: opacity .2s; }
+  .plan-radio-price { font-size: 1.6rem; font-weight: 900; color: var(--text-dark); }
+  .plan-radio-days { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+  .plan-radio-perday { font-size: 0.72rem; color: var(--primary); font-weight: 700; margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="subscribe-card">
+  <div class="card-custom">
+    <div style="text-align:center; margin-bottom:24px; padding-bottom:18px; border-bottom:1px solid var(--border-color);">
+      <div style="font-size:2.5rem; margin-bottom:8px;">🍛</div>
+      <h2 style="font-size:1.3rem; font-weight:900; color:var(--text-dark); margin:0 0 4px;">Subscribe to Mess</h2>
+      <p style="color:var(--text-muted); font-size:0.85rem; margin:0;">Enjoy authentic South Indian meals — breakfast, lunch & dinner</p>
+    </div>
+
+    <form method="post" action="{% url 'student_mess_subscribe' %}">
+      {% csrf_token %}
+
+      <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark); margin-bottom:10px;">
+        <i class="fas fa-tags" style="color:var(--primary); margin-right:6px;"></i> Choose Your Plan
+      </div>
+
+      <div class="plan-radio-group">
+        <label class="plan-radio-label">
+          <input type="radio" name="plan" value="30_days" checked>
+          <div class="plan-radio-content">
+            <div style="font-size:0.72rem; font-weight:700; color:#f59e0b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;">⭐ Best Value</div>
+            <div class="plan-radio-price">₹3,000</div>
+            <div class="plan-radio-days">30 Days Plan</div>
+            <div class="plan-radio-perday">₹100 / day</div>
+          </div>
+        </label>
+        <label class="plan-radio-label">
+          <input type="radio" name="plan" value="15_days">
+          <div class="plan-radio-content">
+            <div style="font-size:0.72rem; font-weight:700; color:#7c3aed; text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px;">Flexible</div>
+            <div class="plan-radio-price">₹1,800</div>
+            <div class="plan-radio-days">15 Days Plan</div>
+            <div class="plan-radio-perday">₹120 / day</div>
+          </div>
+        </label>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label class="form-label"><i class="fas fa-calendar" style="color:var(--primary); margin-right:6px;"></i> Start Date</label>
+        {{ form.start_date }}
+        {% if form.start_date.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.start_date.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div style="background:var(--bg-main); border:1px solid var(--border-color); border-radius:12px; padding:14px; margin-bottom:20px;">
+        <div style="font-size:0.78rem; color:var(--text-muted);">
+          <i class="fas fa-info-circle" style="color:var(--primary);"></i> Your subscription includes:
+        </div>
+        <div style="font-size:0.82rem; color:var(--text-dark); margin-top:6px; display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+          <div><i class="fas fa-check" style="color:#16a34a; font-size:.7rem; margin-right:4px;"></i> Breakfast (7:30–9:30 AM)</div>
+          <div><i class="fas fa-check" style="color:#16a34a; font-size:.7rem; margin-right:4px;"></i> Lunch (12:30–2:30 PM)</div>
+          <div><i class="fas fa-check" style="color:#16a34a; font-size:.7rem; margin-right:4px;"></i> Dinner (7:30–9:30 PM)</div>
+          <div><i class="fas fa-check" style="color:#16a34a; font-size:.7rem; margin-right:4px;"></i> Unlimited servings</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px;">
+        <a href="{% url 'student_mess_menu' %}" class="btn-outline-custom" style="flex:1; text-align:center;">Cancel</a>
+        <button type="submit" class="btn-primary-custom" style="flex:2;">
+          <i class="fas fa-credit-card"></i> Confirm & Subscribe
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

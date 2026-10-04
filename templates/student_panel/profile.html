@@ -1,0 +1,257 @@
+{% extends "base_student.html" %}
+{% block title %}My Profile — Chavara Living{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block extra_head %}
+<style>
+  .profile-tabs {
+    display: flex;
+    background: var(--bg-main);
+    padding: 5px;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 24px;
+    gap: 6px;
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .profile-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .profile-tab-btn:hover {
+    color: var(--primary);
+  }
+  .profile-tab-btn.active {
+    background: var(--card-bg);
+    color: var(--primary);
+    box-shadow: var(--shadow-sm);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:760px; margin:0 auto;">
+  <div style="margin-bottom:20px; text-align:center;">
+    <h2 style="font-size:1.4rem; font-weight:800; color:var(--text-dark); margin-bottom:4px;">Student Profile Management</h2>
+    <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">View or update your registered student information</p>
+  </div>
+
+  <!-- Profile Switcher Tabs -->
+  <div class="profile-tabs">
+    <button type="button" class="profile-tab-btn active" id="tabViewBtn" onclick="switchProfileTab('view')">
+      <i class="fas fa-id-card"></i> View Profile
+    </button>
+    <button type="button" class="profile-tab-btn" id="tabEditBtn" onclick="switchProfileTab('edit')">
+      <i class="fas fa-user-pen"></i> Edit Profile
+    </button>
+  </div>
+
+  <!-- TAB 1: VIEW PROFILE -->
+  <div class="card-custom" id="viewProfileSection">
+    <div style="text-align:center; padding-bottom:20px; border-bottom:1px solid var(--border-color); margin-bottom:20px;">
+      <div style="width:76px; height:76px; background:var(--primary-gradient); color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:800; margin:0 auto 12px; box-shadow:var(--shadow-md);">
+        {{ student.name|first|upper }}
+      </div>
+      <h3 style="font-size:1.3rem; font-weight:800; color:var(--text-dark); margin:0;">{{ student.name }}</h3>
+      <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-top:6px;">
+        <span class="badge-custom badge-info" style="font-weight:700;"><i class="fas fa-id-badge"></i> {{ student.student_id }}</span>
+        {% if booking %}
+          <span class="badge-custom badge-success" style="font-weight:700;"><i class="fas fa-bed"></i> Room {{ booking.room.room_no }} (Bed #{{ booking.bed_number }})</span>
+        {% else %}
+          <span class="badge-custom badge-secondary"><i class="fas fa-clock"></i> Room Unassigned</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.88rem; font-weight:500;">
+          <i class="fas fa-user" style="color:var(--primary); margin-right:8px;"></i> Username
+        </span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ student.user.username }}</span>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.88rem; font-weight:500;">
+          <i class="fas fa-envelope" style="color:var(--primary); margin-right:8px;"></i> Email Address
+        </span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ student.email }}</span>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.88rem; font-weight:500;">
+          <i class="fas fa-phone" style="color:var(--primary); margin-right:8px;"></i> Contact Phone
+        </span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ student.contact }}</span>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.88rem; font-weight:500;">
+          <i class="fas fa-graduation-cap" style="color:var(--primary); margin-right:8px;"></i> Course / Degree
+        </span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ student.course }}</span>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.88rem; font-weight:500;">
+          <i class="fas fa-calendar-alt" style="color:var(--primary); margin-right:8px;"></i> Academic Year
+        </span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ student.get_year_display }}</span>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border-color);">
+        <span style="color:var(--text-muted); font-size:0.88rem; font-weight:500;">
+          <i class="fas fa-calendar-check" style="color:var(--primary); margin-right:8px;"></i> Date of Admission
+        </span>
+        <span style="font-weight:700; color:var(--text-dark);">{{ student.date_of_admission|date:"d M Y" }}</span>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; padding:10px 0;">
+        <span style="color:var(--text-muted); font-size:0.88rem; font-weight:500;">
+          <i class="fas fa-location-dot" style="color:var(--primary); margin-right:8px;"></i> Permanent Address
+        </span>
+        <span style="font-weight:600; color:var(--text-dark); text-align:right; max-width:320px;">
+          {{ student.address|default:"Not provided" }}
+        </span>
+      </div>
+    </div>
+
+    <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border-color); display:flex; justify-content:center;">
+      <button type="button" class="btn-primary-custom" onclick="switchProfileTab('edit')">
+        <i class="fas fa-user-pen"></i> Edit My Profile Details
+      </button>
+    </div>
+  </div>
+
+  <!-- TAB 2: EDIT PROFILE -->
+  <div class="card-custom" id="editProfileSection" style="display:none;">
+    <div style="display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--border-color); padding-bottom:16px; margin-bottom:20px;">
+      <div style="width:44px; height:44px; background:rgba(37, 99, 235, 0.12); color:var(--primary); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+        <i class="fas fa-user-pen"></i>
+      </div>
+      <div>
+        <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-dark); margin:0;">Edit Profile Information</h3>
+        <span style="font-size:0.78rem; color:var(--text-muted);">Update your contact details or change your password</span>
+      </div>
+    </div>
+
+    <form method="post" action="{% url 'student_profile' %}" id="studentProfileForm" autocomplete="off">
+      {% csrf_token %}
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+        <div>
+          <label class="form-label">Full Name <span style="color:#ef4444;">*</span></label>
+          {{ form.name }}
+          {% if form.name.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.name.errors.0 }}</div>{% endif %}
+        </div>
+        <div>
+          <label class="form-label">10-Digit Mobile <span style="color:#ef4444;">*</span></label>
+          {{ form.contact }}
+          {% if form.contact.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.contact.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+        <div>
+          <label class="form-label">Email Address <span style="color:#ef4444;">*</span></label>
+          {{ form.email }}
+          {% if form.email.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.email.errors.0 }}</div>{% endif %}
+        </div>
+        <div>
+          <label class="form-label">Course / Degree <span style="color:#ef4444;">*</span></label>
+          {{ form.course }}
+          {% if form.course.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.course.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label class="form-label">Academic Year <span style="color:#ef4444;">*</span></label>
+        {{ form.year }}
+        {% if form.year.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.year.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label class="form-label">Permanent Address</label>
+        {{ form.address }}
+        {% if form.address.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.address.errors.0 }}</div>{% endif %}
+      </div>
+
+      <!-- Password Change Section (Optional) -->
+      <div style="background:var(--bg-main); border:1px solid var(--border-color); border-radius:14px; padding:18px; margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <div style="font-weight:700; font-size:0.9rem; color:var(--text-dark);">
+            <i class="fas fa-lock" style="color:var(--primary); margin-right:6px;"></i> Change Password (Optional)
+          </div>
+          <span style="font-size:0.75rem; color:var(--text-muted);">Leave empty to keep current</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div>
+            <label class="form-label" style="font-size:0.82rem;">New Password</label>
+            {{ form.new_password }}
+            {% if form.new_password.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.new_password.errors.0 }}</div>{% endif %}
+          </div>
+          <div>
+            <label class="form-label" style="font-size:0.82rem;">Confirm New Password</label>
+            {{ form.confirm_new_password }}
+            {% if form.confirm_new_password.errors %}<div style="color:#b91c1c; font-size:0.78rem; margin-top:4px;">{{ form.confirm_new_password.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:8px;">
+          <i class="fas fa-info-circle" style="color:var(--primary);"></i> Password rule: Minimum 8 characters, at least 1 uppercase letter (A-Z) and 1 special symbol (!@#$%^&*).
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:12px; border-top:1px solid var(--border-color); padding-top:18px;">
+        <button type="button" class="btn-outline-custom" onclick="switchProfileTab('view')">Cancel</button>
+        <button type="submit" class="btn-primary-custom">
+          <i class="fas fa-save"></i> Save Profile Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function switchProfileTab(tab) {
+  const viewSection = document.getElementById('viewProfileSection');
+  const editSection = document.getElementById('editProfileSection');
+  const tabViewBtn = document.getElementById('tabViewBtn');
+  const tabEditBtn = document.getElementById('tabEditBtn');
+
+  if (tab === 'edit') {
+    viewSection.style.display = 'none';
+    editSection.style.display = 'block';
+    tabViewBtn.classList.remove('active');
+    tabEditBtn.classList.add('active');
+  } else {
+    viewSection.style.display = 'block';
+    editSection.style.display = 'none';
+    tabViewBtn.classList.add('active');
+    tabEditBtn.classList.remove('active');
+  }
+}
+
+// Auto open edit tab if form errors exist
+{% if form.errors %}
+document.addEventListener('DOMContentLoaded', function() {
+  switchProfileTab('edit');
+});
+{% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,211 @@
+{% extends "base_admin.html" %}
+{% block title %}{{ action }} Student{% endblock %}
+{% block page_title %}{{ action }} Student{% endblock %}
+
+{% block content %}
+<div class="form-container-card" style="max-width:860px;">
+  <div style="display:flex; align-items:center; gap:16px; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid var(--border-color);">
+    <div style="width:52px; height:52px; background:#dcfce7; color:#166534; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.4rem;">
+      <i class="fas fa-user-graduate"></i>
+    </div>
+    <div>
+      <h2 style="font-size:1.3rem; font-weight:800; color:var(--text-dark); margin:0;">{{ action }} Student Record</h2>
+      <p style="color:var(--text-muted); font-size:0.88rem; margin-top:2px;">Fill in student details, 10-digit phone number, and login credentials.</p>
+    </div>
+  </div>
+
+  <form method="post" autocomplete="off" id="studentForm">
+    {% csrf_token %}
+    <!-- DUMMY OFFSCREEN INPUTS TO ABSORB BROWSER AUTOFILL -->
+    <input type="text" name="fake_username_autofill" style="position:absolute; top:-9999px; left:-9999px;" tabindex="-1" readonly />
+    <input type="password" name="fake_password_autofill" style="position:absolute; top:-9999px; left:-9999px;" tabindex="-1" readonly />
+    
+    {% if action == "Register" %}
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+      <div>
+        <label class="form-label">Login Username</label>
+        {{ form.username }}
+        {% if form.username.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.username.errors }}</div>{% endif %}
+      </div>
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label class="form-label" style="margin-bottom:0;">Login Password</label>
+          <span style="font-size:0.72rem; color:#64748b; font-weight:600;">Min 8, 1 Upper, 1 Special</span>
+        </div>
+        <div style="position:relative; margin-top:6px;">
+          {{ form.password }}
+          <i class="fas fa-eye" id="toggleStudentPasswordIcon" onclick="toggleStudentPasswordVisibility()" style="position:absolute; right:16px; top:50%; transform:translateY(-50%); color:var(--text-muted); cursor:pointer; font-size:1.1rem; padding:4px;" title="Show/Hide Password"></i>
+        </div>
+        <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">Requirements: 8+ characters, at least 1 uppercase letter and 1 special symbol.</div>
+        {% if form.password.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.password.errors }}</div>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+      <div>
+        <label class="form-label">Full Name</label>
+        {{ form.name }}
+        {% if form.name.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.name.errors }}</div>{% endif %}
+      </div>
+      <div>
+        <label class="form-label">Contact Phone (10 Digits)</label>
+        {{ form.contact }}
+        {% if form.contact.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.contact.errors }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+      <div>
+        <label class="form-label">Email Address</label>
+        {{ form.email }}
+        {% if form.email.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.email.errors }}</div>{% endif %}
+      </div>
+      <div>
+        <label class="form-label">Course / Program</label>
+        {{ form.course }}
+        {% if form.course.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.course.errors }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+      <div>
+        <label class="form-label">Academic Year</label>
+        {{ form.year }}
+        {% if form.year.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.year.errors }}</div>{% endif %}
+      </div>
+      <div>
+        <label class="form-label">Date of Admission</label>
+        {{ form.date_of_admission }}
+        {% if form.date_of_admission.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.date_of_admission.errors }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div style="margin-bottom:28px;">
+      <label class="form-label">Permanent Address</label>
+      {{ form.address }}
+      {% if form.address.errors %}<div style="color:#b91c1c; font-size:0.8rem; margin-top:4px;">{{ form.address.errors }}</div>{% endif %}
+    </div>
+
+    {% if action == "Register" %}
+    <!-- ===== INITIAL FEE RECORD SECTION ===== -->
+    <div style="border-top:2px dashed var(--border-color); padding-top:24px; margin-bottom:28px;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+        <div style="width:40px; height:40px; background:#e0f2fe; color:#0369a1; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1rem;">
+          <i class="fas fa-rupee-sign"></i>
+        </div>
+        <div>
+          <div style="font-size:1rem; font-weight:800; color:var(--text-dark);">Initial Fee Record <span style="color:var(--text-muted); font-weight:400; font-size:0.82rem;">(Optional)</span></div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">Create the first fee record for this student at registration time.</div>
+        </div>
+        <label style="margin-left:auto; display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.88rem; font-weight:600; color:var(--primary);">
+          <input type="checkbox" id="enableFeeRecord" name="enable_fee_record" style="width:16px; height:16px; cursor:pointer;" onchange="toggleFeeSection(this)"> Enable
+        </label>
+      </div>
+
+      <div id="feeRecordSection" style="display:none;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+          <div>
+            <label class="form-label">Fee Type</label>
+            <select name="fee_type" class="form-select">
+              <option value="Monthly">Monthly Fee</option>
+              <option value="Annual">Annual Fee</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Amount (₹)</label>
+            <input type="number" name="fee_amount" class="form-control" step="0.01" min="0" placeholder="e.g. 7500">
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+          <div>
+            <label class="form-label">Due Date</label>
+            <input type="date" name="fee_due_date" class="form-control">
+          </div>
+          <div>
+            <label class="form-label">Status</label>
+            <select name="fee_status" class="form-select">
+              <option value="Pending">Pending</option>
+              <option value="Paid">Paid</option>
+              <option value="Overdue">Overdue</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:8px;">
+          <label class="form-label">Description / Remarks</label>
+          <input type="text" name="fee_description" class="form-control" placeholder="e.g. October 2025 Hostel Fee">
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div style="display:flex; justify-content:flex-end; gap:12px;">
+      <a href="{% url 'student_list' %}" class="btn-outline-custom">Cancel</a>
+      <button type="submit" class="btn-primary-custom">
+        <i class="fas fa-save"></i> {% if action == "Register" %}Register Student{% else %}Save Changes{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+function toggleStudentPasswordVisibility() {
+  const pwdInput = document.getElementById('studentPasswordInput');
+  const icon = document.getElementById('toggleStudentPasswordIcon');
+  if (pwdInput) {
+    if (pwdInput.type === 'password') {
+      pwdInput.type = 'text';
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+      icon.style.color = 'var(--primary)';
+    } else {
+      pwdInput.type = 'password';
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+      icon.style.color = 'var(--text-muted)';
+    }
+  }
+}
+
+function toggleFeeSection(checkbox) {
+  const section = document.getElementById('feeRecordSection');
+  if (section) section.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const contactInput = document.querySelector('input[name="contact"]');
+  const form = document.getElementById('studentForm');
+
+  if (contactInput) {
+    contactInput.addEventListener('input', function() {
+      // Strip non-digits
+      const rawVal = this.value;
+      const cleanVal = rawVal.replace(/[^0-9]/g, '');
+      if (cleanVal.length > 10) {
+        alert('Phone number cannot exceed 10 digits.');
+        this.value = cleanVal.slice(0, 10);
+      } else {
+        this.value = cleanVal;
+      }
+    });
+
+    contactInput.addEventListener('blur', function() {
+      if (this.value.length > 0 && this.value.length < 10) {
+        alert('Phone number must be exactly 10 digits.');
+      }
+    });
+  }
+
+  if (form && contactInput) {
+    form.addEventListener('submit', function(e) {
+      if (contactInput.value.length !== 10) {
+        e.preventDefault();
+        alert('Phone number must be exactly 10 digits.');
+        contactInput.focus();
+      }
+    });
+  }
+});
+</script>
+{% block extra_js %}{% endblock %}
+{% endblock %}

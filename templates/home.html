@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chavara Living — Smart Hostel Management System</title>
+  {% load static %}
+  <script>
+    (function() {
+      var savedTheme = localStorage.getItem('chavara_theme');
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=7">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* ═════════════════════════════════════════════════════════════
+       Landing Page Specific Custom Styles (Chavara Oceanic Theme)
+       ═════════════════════════════════════════════════════════════ */
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-dark);
+      overflow-x: hidden;
+    }
+
+    /* ── Floating Navbar ── */
+    .landing-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: rgba(255, 255, 255, 0.85);
+      border-bottom: 1px solid var(--border-color);
+      transition: all 0.3s ease;
+    }
+    [data-theme="dark"] .landing-nav {
+      background: rgba(15, 23, 42, 0.88);
+    }
+    .nav-container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+    .brand-logo-icon {
+      width: 42px; height: 42px;
+      background: var(--primary-gradient);
+      color: #fff;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+    }
+    .brand-text-col {
+      display: flex; flex-direction: column;
+    }
+    .brand-title {
+      font-size: 1.15rem; font-weight: 800; color: var(--text-dark); line-height: 1.15;
+    }
+    .brand-subtag {
+      font-size: 0.68rem; font-weight: 800; color: var(--primary); letter-spacing: 0.8px; text-transform: uppercase;
+    }
+    .nav-menu-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+      margin: 0; padding: 0;
+    }
+    .nav-menu-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+    .nav-menu-links a:hover {
+      color: var(--primary);
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .theme-round-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      color: var(--text-dark);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+    }
+    .theme-round-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      transform: rotate(15deg);
+    }
+
+    /* ── Hero Section ── */
+    .hero-section {
+      padding-top: 140px;
+      padding-bottom: 90px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 30px;
+      background: rgba(37, 99, 235, 0.08);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      color: var(--primary);
+      font-size: 0.84rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+    .hero-title {
+      font-size: 3.4rem;
+      font-weight: 900;
+      line-height: 1.12;
+      color: var(--text-dark);
+      margin-bottom: 20px;
+      letter-spacing: -0.02em;
+    }
+    .hero-title .gradient-text {
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-desc {
+      font-size: 1.12rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      margin-bottom: 34px;
+      max-width: 540px;
+    }
+    .hero-cta-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 48px;
+      flex-wrap: wrap;
+    }
+    .hero-btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--primary-gradient);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 14px 28px;
+      border-radius: 12px;
+      text-decoration: none;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.32);
+      transition: all 0.25s ease;
+    }
+    .hero-btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.42);
+    }
+    .hero-btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card-bg);
+      border: 1.5px solid var(--border-color);
+      color: var(--text-dark);
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 14px 26px;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: all 0.25s ease;
+    }
+    .hero-btn-secondary:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    /* ── Hero Stat Counters ── */
+    .hero-stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+    }
+    .hero-stat-val {
+      font-size: 1.7rem;
+      font-weight: 900;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .hero-stat-lbl {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ── Mockup Graphic (Hero Right) ── */
+    .mockup-wrapper {
+      position: relative;
+    }
+    .mockup-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+      padding: 24px;
+      position: relative;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    [data-theme="dark"] .mockup-card {
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    }
+    .mockup-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .mockup-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-green { background: #10b981; }
+    .mockup-tag {
+      margin-left: 8px; font-size: 0.76rem; font-weight: 700; color: var(--text-muted); text-transform: lowercase; font-family: monospace;
+    }
+
+    .mockup-grid-2x2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .mock-tile {
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .mock-tile-lbl {
+      font-size: 0.72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .mock-tile-val {
+      font-size: 1.35rem; font-weight: 900; margin-top: 4px;
+    }
+
+    /* Chart Simulation inside Mockup */
+    .mockup-chart-box {
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .chart-box-title {
+      font-size: 0.74rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;
+    }
+    .chart-bars-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 70px;
+    }
+    .chart-bar-item {
+      flex: 1;
+      border-radius: 6px 6px 0 0;
+      background: var(--primary-gradient);
+      opacity: 0.85;
+      transition: height 0.4s ease, opacity 0.2s;
+    }
+    .chart-bar-item:hover { opacity: 1; }
+
+    /* Floating Badges */
+    .floating-pill {
+      position: absolute;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
+      border-radius: 16px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      z-index: 10;
+      animation: floatPill 4s ease-in-out infinite;
+    }
+    .pill-top-right {
+      top: -16px; right: -18px;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .pill-bottom-left {
+      bottom: -18px; left: -16px;
+      animation-delay: 2s;
+    }
+    @keyframes floatPill {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    .pill-icon-green {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: rgba(16, 185, 129, 0.15); color: #10b981;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+    }
+    .pill-icon-blue {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: rgba(37, 99, 235, 0.15); color: #2563eb;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    /* ── Sections Common ── */
+    .landing-section {
+      padding: 90px 24px;
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+    .sec-tag {
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    .sec-title {
+      text-align: center;
+      font-size: 2.3rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      letter-spacing: -0.01em;
+      margin-bottom: 12px;
+    }
+    .sec-sub {
+      text-align: center;
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 620px;
+      margin: 0 auto 50px;
+      line-height: 1.6;
+    }
+
+    /* ── Key Features Grid ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 30px;
+      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      position: relative;
+    }
+    .feature-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 36px rgba(37, 99, 235, 0.1);
+      border-color: rgba(37, 99, 235, 0.3);
+    }
+    .feature-icon-box {
+      width: 52px; height: 52px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.35rem;
+      margin-bottom: 20px;
+    }
+    .f-pink   { background: rgba(236, 72, 153, 0.12); color: #ec4899; }
+    .f-purple { background: rgba(168, 85, 247, 0.12); color: #a855f7; }
+    .f-green  { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+    .f-amber  { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+    .f-red    { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+    .f-blue   { background: rgba(37, 99, 235, 0.12); color: #2563eb; }
+
+    .feature-name {
+      font-size: 1.2rem; font-weight: 800; color: var(--text-dark); margin-bottom: 8px;
+    }
+    .feature-text {
+      font-size: 0.92rem; color: var(--text-muted); line-height: 1.6; margin: 0;
+    }
+
+    /* ── Portals Section ── */
+    .portals-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+    .portal-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 36px;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    .portal-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: var(--primary-gradient);
+    }
+    .portal-box:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.1);
+    }
+    .portal-icon-round {
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 22px;
+    }
+    .p-student { background: rgba(16, 185, 129, 0.14); color: #10b981; }
+    .p-admin   { background: rgba(37, 99, 235, 0.14); color: #2563eb; }
+
+    .portal-title {
+      font-size: 1.45rem; font-weight: 800; color: var(--text-dark); margin-bottom: 6px;
+    }
+    .portal-sub {
+      font-size: 0.92rem; color: var(--text-muted); margin-bottom: 24px;
+    }
+    .portal-checklist {
+      list-style: none; margin: 0 0 32px 0; padding: 0;
+      display: flex; flex-direction: column; gap: 12px;
+      flex: 1;
+    }
+    .portal-checklist li {
+      font-size: 0.92rem; color: var(--text-dark); display: flex; align-items: flex-start; gap: 10px;
+    }
+    .portal-checklist li i {
+      color: #10b981; font-size: 0.95rem; margin-top: 3px; flex-shrink: 0;
+    }
+    .portal-action-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 13px 0; border-radius: 12px; font-weight: 700; font-size: 0.95rem;
+      text-decoration: none; transition: all 0.2s ease;
+    }
+    .btn-green-portal {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff; box-shadow: 0 6px 18px rgba(16, 185, 129, 0.3);
+    }
+    .btn-green-portal:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(16, 185, 129, 0.4); }
+    .btn-blue-portal {
+      background: var(--card-bg); border: 1.5px solid var(--border-color); color: var(--text-dark);
+    }
+    .btn-blue-portal:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); }
+
+    /* ── Footer ── */
+    .landing-footer {
+      background: var(--card-bg);
+      border-top: 1px solid var(--border-color);
+      padding: 60px 24px 30px;
+      margin-top: 40px;
+    }
+    .footer-container {
+      max-width: 1240px; margin: 0 auto;
+      display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 36px;
+      margin-bottom: 40px;
+    }
+    .footer-brand p {
+      color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; margin-top: 12px; max-width: 320px;
+    }
+    .footer-col h4 {
+      font-size: 0.95rem; font-weight: 800; color: var(--text-dark); margin-bottom: 16px;
+    }
+    .footer-col ul {
+      list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px;
+    }
+    .footer-col a {
+      color: var(--text-muted); text-decoration: none; font-size: 0.88rem; transition: color 0.2s;
+    }
+    .footer-col a:hover { color: var(--primary); }
+    .footer-bottom {
+      max-width: 1240px; margin: 0 auto; padding-top: 24px; border-top: 1px solid var(--border-color);
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+      color: var(--text-muted); font-size: 0.84rem;
+    }
+
+    @media (max-width: 900px) {
+      .hero-container { grid-template-columns: 1fr; }
+      .portals-grid { grid-template-columns: 1fr; }
+      .footer-container { grid-template-columns: 1fr 1fr; }
+      .hero-title { font-size: 2.6rem; }
+      .nav-menu-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVIGATION BAR -->
+<header class="landing-nav">
+  <div class="nav-container">
+    <a href="{% url 'home' %}" class="brand-link">
+      <div class="brand-logo-icon">
+        <i class="fas fa-building-user"></i>
+      </div>
+      <div class="brand-text-col">
+        <span class="brand-title">{{ hostel_settings.hostel_name|default:"Chavara Living" }}</span>
+        <span class="brand-subtag">{{ hostel_settings.tagline|default:"Smart Hostel System" }}</span>
+      </div>
+    </a>
+
+    <!-- Nav Links (smooth scroll anchors) -->
+    <ul class="nav-menu-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#portals">Portals</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+
+    <!-- Action Buttons & Theme Switcher -->
+    <div class="nav-actions">
+      <button type="button" class="theme-round-btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+        <i class="fas fa-moon" id="homeThemeIcon"></i>
+      </button>
+
+      {% if request.user.is_authenticated %}
+        {% if request.user.role == 'admin' %}
+          <a href="{% url 'admin_dashboard' %}" class="hero-btn-primary" style="padding:8px 18px; font-size:0.88rem;">
+            Admin Portal &rarr;
+          </a>
+        {% else %}
+          <a href="{% url 'student_dashboard' %}" class="hero-btn-primary" style="padding:8px 18px; font-size:0.88rem;">
+            My Dashboard &rarr;
+          </a>
+        {% endif %}
+      {% else %}
+        <a href="{% url 'login' %}" class="hero-btn-secondary" style="padding:8px 20px; font-size:0.88rem;">
+          Login
+        </a>
+        <a href="{% url 'register' %}" class="hero-btn-primary" style="padding:8px 20px; font-size:0.88rem;">
+          Register &rarr;
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<!-- HERO SECTION -->
+<section class="hero-section">
+  <div class="hero-container">
+    <!-- Left Column: Hero Copy & CTAs -->
+    <div>
+      <div class="hero-pill">
+        <i class="fas fa-shield-heart"></i> Smart &amp; Connected Hostel Living
+      </div>
+      <h1 class="hero-title">
+        Welcome to <br>
+        <span class="gradient-text">{{ hostel_settings.hostel_name|default:"Chavara Living" }}</span>
+      </h1>
+      <p class="hero-desc">
+        A safe, smart &amp; connected hostel management platform &mdash; rooms, fees, South Indian dining, leave passes, and student services driven directly by live database records.
+      </p>
+
+      <div class="hero-cta-group">
+        <a href="{% url 'register' %}" class="hero-btn-primary">
+          Register as Student &rarr;
+        </a>
+        <a href="{% url 'login' %}" class="hero-btn-secondary">
+          Sign In
+        </a>
+      </div>
+
+      <!-- Quick Metrics Counters (Live Database Values) -->
+      <div class="hero-stats-row">
+        <div>
+          <div class="hero-stat-val">{{ total_students }}</div>
+          <div class="hero-stat-lbl">Students Enrolled</div>
+        </div>
+        <div>
+          <div class="hero-stat-val">{{ total_rooms }}</div>
+          <div class="hero-stat-lbl">Hostel Rooms</div>
+        </div>
+        <div>
+          <div class="hero-stat-val">{{ occupied_rooms }}</div>
+          <div class="hero-stat-lbl">Occupied Rooms</div>
+        </div>
+        <div>
+          <div class="hero-stat-val">{{ active_mess }}</div>
+          <div class="hero-stat-lbl">Mess Diners</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Interactive Mockup Graphic -->
+    <div class="mockup-wrapper">
+      <!-- Floating Badge 1: Leave System Status -->
+      <div class="floating-pill pill-top-right">
+        <div class="pill-icon-green"><i class="fas fa-calendar-check"></i></div>
+        <div>
+          <div style="color:var(--text-dark); font-size:0.82rem; font-weight:800;">Digital Leave Passes</div>
+          <div style="font-size:0.7rem; color:#10b981; font-weight:600;">{{ total_leaves }} Requests Handled</div>
+        </div>
+      </div>
+
+      <!-- Dashboard Window Card -->
+      <div class="mockup-card card-custom">
+        <div class="mockup-header">
+          <span class="mockup-dot dot-red"></span>
+          <span class="mockup-dot dot-yellow"></span>
+          <span class="mockup-dot dot-green"></span>
+          <span class="mockup-tag">live hostel overview</span>
+        </div>
+
+        <!-- 2x2 Metric Tiles from Database -->
+        <div class="mockup-grid-2x2">
+          <div class="mock-tile">
+            <div class="mock-tile-lbl">REGISTERED STUDENTS</div>
+            <div class="mock-tile-val" style="color:#10b981;">{{ total_students }}</div>
+          </div>
+          <div class="mock-tile">
+            <div class="mock-tile-lbl">ROOM OCCUPANCY</div>
+            <div class="mock-tile-val" style="color:#f59e0b;">{{ occupied_rooms }}/{{ total_rooms }}</div>
+          </div>
+          <div class="mock-tile">
+            <div class="mock-tile-lbl">MESS SUBSCRIBERS</div>
+            <div class="mock-tile-val" style="color:var(--primary);">{{ active_mess }}</div>
+          </div>
+          <div class="mock-tile">
+            <div class="mock-tile-lbl">LEAVE REQUESTS</div>
+            <div class="mock-tile-val" style="color:#6366f1;">{{ total_leaves }}</div>
+          </div>
+        </div>
+
+        <!-- Facility Visualizer -->
+        <div class="mockup-chart-box">
+          <div class="chart-box-title">AUTHENTIC SOUTH INDIAN MESS &bull; LIVE STATUS</div>
+          <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.5;">
+            Fresh South Indian breakfast, lunch &amp; dinner served daily with real-time dining subscription management.
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating Badge 2: Room Capacity Matrix -->
+      <div class="floating-pill pill-bottom-left">
+        <div class="pill-icon-blue"><i class="fas fa-bed"></i></div>
+        <div>
+          <div style="color:var(--text-dark); font-size:0.82rem; font-weight:800;">Bed Allotment Matrix</div>
+          <div style="font-size:0.7rem; color:var(--text-muted);">{{ occupied_rooms }} of {{ total_rooms }} rooms occupied</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- KEY FEATURES SECTION -->
+<section class="landing-section" id="features">
+  <div class="sec-tag">KEY FEATURES</div>
+  <h2 class="sec-title">Everything a modern hostel needs</h2>
+  <p class="sec-sub">
+    Twelve tightly-integrated modules that replace registers, notice boards and spreadsheets with one smart, digital platform.
+  </p>
+
+  <div class="features-grid">
+    <!-- Card 1 -->
+    <div class="feature-card">
+      <div class="feature-icon-box f-pink">
+        <i class="fas fa-bed"></i>
+      </div>
+      <h3 class="feature-name">Smart Rooms</h3>
+      <p class="feature-text">Real-time room occupancy, bed capacity enforcement (Single/Double/Triple), floor indexing &amp; one-click allocation.</p>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="feature-card">
+      <div class="feature-icon-box f-purple">
+        <i class="fas fa-calendar-check"></i>
+      </div>
+      <h3 class="feature-name">Leave Management</h3>
+      <p class="feature-text">Digital leave requests for home visits, emergency parent verification, and instant admin approvals with review notes.</p>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="feature-card">
+      <div class="feature-icon-box f-green">
+        <i class="fas fa-utensils"></i>
+      </div>
+      <h3 class="feature-name">South Indian Mess</h3>
+      <p class="feature-text">Authentic weekly breakfast, lunch &amp; dinner menus with timing highlights, 15-day (₹1,800) and 30-day (₹3,000) subscriptions.</p>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="feature-card">
+      <div class="feature-icon-box f-amber">
+        <i class="fas fa-wallet"></i>
+      </div>
+      <h3 class="feature-name">Fees &amp; Payments</h3>
+      <p class="feature-text">Transparent digital fee ledgers, payment logging, categorized statements and automated pending/overdue tracking.</p>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="feature-card">
+      <div class="feature-icon-box f-red">
+        <i class="fas fa-exclamation-circle"></i>
+      </div>
+      <h3 class="feature-name">Complaints &amp; Support</h3>
+      <p class="feature-text">Categorized grievance submission with live progress tracking (Pending, In Progress, Resolved) and warden resolution notes.</p>
+    </div>
+
+    <!-- Card 6 -->
+    <div class="feature-card">
+      <div class="feature-icon-box f-blue">
+        <i class="fas fa-user-shield"></i>
+      </div>
+      <h3 class="feature-name">Student Privacy Shield</h3>
+      <p class="feature-text">Confidential profile protection guarding student phone numbers and personal data while offering student self-service editing.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TWO PORTALS SECTION -->
+<section class="landing-section" id="portals" style="padding-top:40px;">
+  <div class="sec-tag">TWO PORTALS</div>
+  <h2 class="sec-title">Built for students &amp; administrators</h2>
+  <p class="sec-sub">
+    Role-based access keeps everyone in the right place &mdash; students see their own data, admins see what they need.
+  </p>
+
+  <div class="portals-grid">
+    <!-- Student Portal Card -->
+    <div class="portal-box">
+      <div class="portal-icon-round p-student">
+        <i class="fas fa-user-graduate"></i>
+      </div>
+      <h3 class="portal-title">Student Portal</h3>
+      <p class="portal-sub">Your personal hostel companion</p>
+
+      <ul class="portal-checklist">
+        <li><i class="fas fa-circle-check"></i> View room, attendance &amp; fee status at a glance</li>
+        <li><i class="fas fa-circle-check"></i> Submit complaints, maintenance &amp; leave requests</li>
+        <li><i class="fas fa-circle-check"></i> Track South Indian mess menu, daily dishes &amp; meal timings</li>
+        <li><i class="fas fa-circle-check"></i> Edit own profile securely &mdash; private from administrator view</li>
+      </ul>
+
+      <a href="{% url 'register' %}" class="portal-action-btn btn-green-portal">
+        Create Student Account &rarr;
+      </a>
+    </div>
+
+    <!-- Admin Portal Card -->
+    <div class="portal-box">
+      <div class="portal-icon-round p-admin">
+        <i class="fas fa-shield-halved"></i>
+      </div>
+      <h3 class="portal-title">Admin Portal</h3>
+      <p class="portal-sub">Complete hostel control center</p>
+
+      <ul class="portal-checklist">
+        <li><i class="fas fa-circle-check"></i> Manage students, rooms &amp; allocations</li>
+        <li><i class="fas fa-circle-check"></i> Monitor attendance &amp; record fee payments</li>
+        <li><i class="fas fa-circle-check"></i> Resolve complaints and approve student leaves</li>
+        <li><i class="fas fa-circle-check"></i> Oversee South Indian mess subscriptions &amp; dining operations</li>
+      </ul>
+
+      <a href="{% url 'login' %}" class="portal-action-btn btn-blue-portal">
+        Admin Sign In &rarr;
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT SECTION -->
+<section class="landing-section" id="about" style="padding-top:40px;">
+  <div class="sec-tag">ABOUT CHAVARA LIVING</div>
+  <h2 class="sec-title">A modern sanctuary for scholars</h2>
+  <div style="background:var(--card-bg); border:1px solid var(--border-color); border-radius:24px; padding:40px; margin-top:24px; display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:32px;">
+    <div>
+      <div style="font-size:1.8rem; color:var(--primary); margin-bottom:12px;"><i class="fas fa-shield"></i></div>
+      <h4 style="font-size:1.1rem; font-weight:800; color:var(--text-dark); margin-bottom:8px;">Safety First</h4>
+      <p style="font-size:0.9rem; color:var(--text-muted); line-height:1.6; margin:0;">
+        Round-the-clock security, verified warden approvals for leaves, and emergency parent contact verification ensure student safety.
+      </p>
+    </div>
+    <div>
+      <div style="font-size:1.8rem; color:#10b981; margin-bottom:12px;"><i class="fas fa-bowl-food"></i></div>
+      <h4 style="font-size:1.1rem; font-weight:800; color:var(--text-dark); margin-bottom:8px;">Wholesome Dining</h4>
+      <p style="font-size:0.9rem; color:var(--text-muted); line-height:1.6; margin:0;">
+        Nutritious, authentic South Indian cuisine served daily with flexible 15-day and 30-day student meal subscriptions.
+      </p>
+    </div>
+    <div>
+      <div style="font-size:1.8rem; color:#6366f1; margin-bottom:12px;"><i class="fas fa-laptop-code"></i></div>
+      <h4 style="font-size:1.1rem; font-weight:800; color:var(--text-dark); margin-bottom:8px;">Smart Technology</h4>
+      <p style="font-size:0.9rem; color:var(--text-muted); line-height:1.6; margin:0;">
+        Paperless records, interactive 3D interfaces, dark mode support, and instantaneous digital reporting at your fingertips.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER / CONTACT -->
+<footer class="landing-footer" id="contact">
+  <div class="footer-container">
+    <div class="footer-brand">
+      <div class="brand-link">
+        <div class="brand-logo-icon">
+          <i class="fas fa-building-user"></i>
+        </div>
+        <div class="brand-text-col">
+          <span class="brand-title">Chavara Living</span>
+          <span class="brand-subtag">Smart Hostel System</span>
+        </div>
+      </div>
+      <p>
+        Redefining the collegiate living experience with modern facilities, transparent administration, and student-first digital tools.
+      </p>
+    </div>
+
+    <div class="footer-col">
+      <h4>Navigation</h4>
+      <ul>
+        <li><a href="#features">Key Features</a></li>
+        <li><a href="#portals">Two Portals</a></li>
+        <li><a href="#about">About Chavara</a></li>
+        <li><a href="{% url 'login' %}">Student / Admin Sign In</a></li>
+        <li><a href="{% url 'register' %}">Student Registration</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Modules</h4>
+      <ul>
+        <li><a href="{% url 'login' %}">Room Allocations</a></li>
+        <li><a href="{% url 'login' %}">South Indian Mess</a></li>
+        <li><a href="{% url 'login' %}">Leave Requests</a></li>
+        <li><a href="{% url 'login' %}">Fee Ledgers</a></li>
+        <li><a href="{% url 'login' %}">Grievance Redressal</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Contact &amp; Help</h4>
+      <ul>
+        <li><span style="font-size:0.88rem; color:var(--text-muted);"><i class="fas fa-envelope" style="margin-right:6px;"></i> support@chavaraliving.in</span></li>
+        <li><span style="font-size:0.88rem; color:var(--text-muted);"><i class="fas fa-phone" style="margin-right:6px;"></i> +91 98765 43210</span></li>
+        <li><span style="font-size:0.88rem; color:var(--text-muted);"><i class="fas fa-location-dot" style="margin-right:6px;"></i> Chavara Campus, Bangalore</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div>&copy; 2026 Chavara Living Hostel System. All rights reserved.</div>
+    <div style="display:flex; gap:16px;">
+      <a href="#features" style="color:var(--text-muted); text-decoration:none;">Privacy</a>
+      <a href="#portals" style="color:var(--text-muted); text-decoration:none;">Terms</a>
+      <a href="{% url 'login' %}" style="color:var(--primary); font-weight:700; text-decoration:none;">Portal Sign In &rarr;</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Theme Switching & Cursor Animation Scripts -->
+<script>
+function toggleTheme() {
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  applyTheme(newTheme);
+}
+
+function applyTheme(theme) {
+  if (theme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('chavara_theme', 'dark');
+    updateThemeIcon(true);
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('chavara_theme', 'light');
+    updateThemeIcon(false);
+  }
+}
+
+function updateThemeIcon(isDark) {
+  const icon = document.getElementById('homeThemeIcon');
+  if (icon) {
+    icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    icon.style.color = isDark ? '#f59e0b' : '';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  updateThemeIcon(isDark);
+});
+</script>
+<script src="{% static 'js/cursor_effects.js' %}"></script>
+</body>
+</html>
